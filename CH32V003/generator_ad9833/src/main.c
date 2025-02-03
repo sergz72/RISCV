@@ -1,50 +1,111 @@
-#include <ch32v00x_misc.h>
-#include <system_ch32v00x.h>
-#include "board.h"
+#include "hal.h"
+#include <generic_dds.h>
+
+#define DDS_COMMAND         3
+#define GET_RESULTS_COMMAND 4
 
 static unsigned char status;
-static unsigned char spi_rxbuf[MAX_SPI_DMA_TRANSFER_SIZE];
-static unsigned int command_ready;
+static unsigned short spi_txbuf[MAX_SPI_TRANSFER_SIZE / 2];
+static unsigned int sweep_points, sweep_current_point;
+static unsigned long sweep_freq_code_start, sweep_freq_code;
+static unsigned int sweep_step;
+static unsigned short sweep_div;
+static int sweep_channel;
+static int last_command;
 
-static const unsigned char device_id = 1;
-static const unsigned char device_config = 2; // todo
-static const unsigned char *spi_txbuf[3] =
+volatile unsigned int command_ready, timer_interrupt;
+unsigned char spi_rxbuf[MAX_SPI_TRANSFER_SIZE];
+
+extern const unsigned char device_id;
+extern const dds_config device_config;
+
+const void *spi_txbufs[] =
 {
-    &device_id,
-    &device_config,
-    &status
+    &device_id,     // get device id command
+    &device_config, // get device config command
+    &status,        // get status command
+    &status,        // dds command
+    spi_txbuf       // get sweep results command
 };
 
-void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
+static void timer_event(void)
 {
-    if (EXTI->INTFR & SPI_NCS_EXTI_LINE)
+    if (sweep_points && !status)
     {
-        if (GPIOC->INDR & SPI_NCS_PIN) // Rising edge
+        if (sweep_current_point)
+            spi_txbuf[sweep_current_point - 1] = adc_get();
+        if (sweep_current_point == sweep_points)
         {
-            spi_disable(spi_rxbuf, spi_txbuf[spi_rxbuf[0]]);
-            command_ready = 1;
+            sweep_current_point = 0;
+            sweep_freq_code = sweep_freq_code_start;
+            status = 1;
+            return;
         }
-        else
-            spi_enable();
-        EXTI->INTFR = SPI_NCS_EXTI_LINE;
+        sweep_current_point++;
+        set_frequency_code(sweep_channel, sweep_freq_code, sweep_div);
+        sweep_freq_code += sweep_step;
+    }
+}
+
+static void exec_dds_command(const dds_i2c_command *cmd)
+{
+    switch (cmd->command)
+    {
+        case DDS_COMMAND_SET_FREQUENCY_CODE:
+            sweep_points = 0;
+            set_frequency_code(cmd->channel, cmd->c10.freq, cmd->c10.div);
+            break;
+        case DDS_COMMAND_SET_MODE:
+            set_mode(cmd->channel, cmd->c1.parameter);
+            break;
+        case DDS_COMMAND_ENABLE_OUTPUT:
+            enable_output(cmd->channel, cmd->c1.parameter);
+            break;
+        case DDS_COMMAND_SWEEP_CODES:
+            sweep_current_point = 0;
+            sweep_freq_code_start = sweep_freq_code = (unsigned long)cmd->c18.freq;
+            sweep_div = cmd->c18.div;
+            sweep_step = cmd->c18.step;
+            sweep_channel = cmd->channel;
+            sweep_points = cmd->c18.points;
+            break;
+        default:
+            break;
     }
 }
 
 int main(void)
 {
-    command_ready = 0;
+    command_ready = timer_interrupt = 0;
+    status = 0;
+    sweep_points = sweep_current_point = 0;
+    last_command = 0;
 
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-    SystemCoreClockUpdate();
     SysInit(spi_rxbuf, &device_id);
+
+    handler_init();
+
+    timer_enable();
 
     while(1)
     {
-        __WFI();
+        WAIT_FOR_INTERRUPT;
+        if (timer_interrupt)
+            timer_event();
         if (command_ready)
         {
-            //todo
+            if (last_command == GET_RESULTS_COMMAND)
+                status = 0;
+            switch (spi_rxbuf[0])
+            {
+                case DDS_COMMAND:
+                    exec_dds_command((const dds_i2c_command*)spi_rxbuf + 1);
+                    break;
+                default:
+                    break;
+            }
             command_ready = 0;
+            last_command = spi_rxbuf[0];
         }
     }
 }

@@ -9,7 +9,7 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 SET(LINKER_SCRIPT ../../Link.ld)
 
-SET(COMMON_FLAGS "-march=rv32ec -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+SET(COMMON_FLAGS "-march=rv32ec_zicsr -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 
 SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
 SET(CMAKE_ASM_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
@@ -26,10 +26,14 @@ file(GLOB SOURCES
         "../lib/src/ch32v00x_rcc.c"
         "../lib/src/ch32v00x_gpio.c"
         "../lib/src/ch32v00x_exti.c"
+        "../lib/src/ch32v00x_tim.c"
+        "../lib/src/ch32v00x_adc.c"
         "../startup_ch32v00x.S"
+        "../../../ARM/common_lib/rf/ad9833.c"
+        "../../../ARM/common_lib/spi_soft.c"
 )
 
-include_directories(src ../lib ../lib/inc)
+include_directories(src ../lib ../lib/inc ../../../ARM/common_lib/rf ../../../ARM/common_lib)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

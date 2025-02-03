@@ -1,5 +1,28 @@
-#include "board.h"
+#include "hal.h"
 #include <ch32v00x.h>
+#include <spi_soft.h>
+#include <ch32v00x_misc.h>
+
+void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
+{
+  if (EXTI->INTFR & SPI_NCS_EXTI_LINE)
+  {
+    if (GPIOC->INDR & SPI_NCS_PIN) // Rising edge
+    {
+      spi_disable(spi_rxbuf, spi_txbufs[spi_rxbuf[0]]);
+      command_ready = 1;
+    }
+    else
+      spi_enable();
+    EXTI->INTFR = SPI_NCS_EXTI_LINE;
+  }
+}
+
+void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
+{
+  timer_interrupt = 1;
+  TIM1->INTFR = 0;
+}
 
 static void dma_disable(void *rxaddress, const void *txaddress)
 {
@@ -8,11 +31,11 @@ static void dma_disable(void *rxaddress, const void *txaddress)
   //Buffer address
   DMA1_Channel3->MADDR = (uint32_t)txaddress;
   //Number of data transfer
-  DMA1_Channel3->CNTR = 65535;
+  DMA1_Channel3->CNTR = MAX_SPI_TRANSFER_SIZE;
   //Buffer address
   DMA1_Channel2->MADDR = (uint32_t)rxaddress;
   //Number of data transfer
-  DMA1_Channel2->CNTR = 65535;
+  DMA1_Channel2->CNTR = MAX_SPI_TRANSFER_SIZE;
 }
 
 /*
@@ -78,17 +101,79 @@ static void exti_init(void)
   EXTI_Init(&EXTI_InitStructure);
 
   NVIC_InitStructure.NVIC_IRQChannel = EXTI7_0_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; //high priority
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
 }
 
+static void timer_init(void)
+{
+  NVIC_InitTypeDef NVIC_InitStructure;
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
+
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE );
+
+  // 5ms interrupt
+  TIM_TimeBaseInitStructure.TIM_Period = 1000-1;
+  TIM_TimeBaseInitStructure.TIM_Prescaler = 48-1;
+  TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 5;
+  TIM_TimeBaseInit( TIM1, &TIM_TimeBaseInitStructure);
+
+  TIM_ClearITPendingBit( TIM1, TIM_IT_Update );
+
+  NVIC_InitStructure.NVIC_IRQChannel = TIM1_UP_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //low priority
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+
+  TIM_ITConfig(TIM1, TIM_IT_Update, ENABLE);
+}
+
+static void adc_init(void)
+{
+  ADC_InitTypeDef  ADC_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+  RCC_ADCCLKConfig(RCC_PCLK2_Div8);
+
+  GPIO_InitStructure.GPIO_Pin = ADC_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+  ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
+  ADC_InitStructure.ADC_ScanConvMode = DISABLE;
+  ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+  ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigInjecConv_None;
+  ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+  ADC_InitStructure.ADC_NbrOfChannel = 1;
+  ADC_Init(ADC1, &ADC_InitStructure);
+
+  ADC_RegularChannelConfig(ADC1, ADC_CHANNEL, 1, ADC_SampleTime_241Cycles);
+
+  ADC_Calibration_Vol(ADC1, ADC_CALVOL_50PERCENT);
+
+  ADC_Cmd(ADC1, ENABLE);
+
+  ADC_ResetCalibration(ADC1);
+  while(ADC_GetResetCalibrationStatus(ADC1));
+  ADC_StartCalibration(ADC1);
+  while(ADC_GetCalibrationStatus(ADC1));
+}
+
 void SysInit(void *rxaddress, const void *txaddress)
 {
+  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+  SystemCoreClockUpdate();
   spi_init();
   exti_init();
   dma_disable(rxaddress, txaddress);
+  timer_init();
+  adc_init();
 }
 
 static void dma_enable(void)
@@ -110,4 +195,23 @@ void spi_disable(void *rxaddress, const void *txaddress)
   //Disable SPI1
   dma_disable(rxaddress, txaddress);
   SPI1->CTLR1 &= ~SPI_CTLR1_SPE;
+}
+
+void ad9833_write(int channel, unsigned short data)
+{
+  unsigned char cmd, d;
+  cmd = data >> 8;
+  d = data & 0xFF;
+  spi_command(0, cmd, &d, NULL, 1, 1);
+}
+
+unsigned short adc_get(void)
+{
+  //todo
+  return 0;
+}
+
+void timer_enable(void)
+{
+    TIM_Cmd( TIM1, ENABLE );
 }
