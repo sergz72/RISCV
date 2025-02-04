@@ -38,7 +38,11 @@ inline static void spi_disable(void *rxaddress, const void *txaddress)
   SPI1->CTLR1 &= ~SPI_CTLR1_SPE;
 }
 
+#if __GNUC__ > 13
+void __attribute__((naked)) EXTI7_0_IRQHandler(void)
+#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
+#endif
 {
   if (EXTI->INTFR & SPI_NCS_EXTI_LINE)
   {
@@ -51,12 +55,22 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
       spi_enable();
     EXTI->INTFR = SPI_NCS_EXTI_LINE;
   }
+#if __GNUC__ > 13
+  asm volatile ("mret");
+#endif
 }
 
+#if __GNUC__ > 13
+void __attribute__((naked)) TIM1_UP_IRQHandler(void)
+#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
+#endif
 {
   timer_interrupt = 1;
   TIM1->INTFR = 0;
+#if __GNUC__ > 13
+  asm volatile ("mret");
+#endif
 }
 
 /*
