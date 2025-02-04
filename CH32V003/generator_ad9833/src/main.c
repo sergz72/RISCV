@@ -91,7 +91,10 @@ int main(void)
     {
         WAIT_FOR_INTERRUPT;
         if (timer_interrupt)
+        {
             timer_event();
+            timer_interrupt = 0;
+        }
         if (command_ready)
         {
             if (last_command == GET_RESULTS_COMMAND)

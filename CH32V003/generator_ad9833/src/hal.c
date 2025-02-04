@@ -3,6 +3,41 @@
 #include <spi_soft.h>
 #include <ch32v00x_misc.h>
 
+inline static void dma_enable(void)
+{
+  //Enable DMA Channels
+  DMA1_Channel3->CFGR |= DMA_CFGR3_EN;
+  DMA1_Channel2->CFGR |= DMA_CFGR2_EN;
+}
+
+static void dma_disable(void *rxaddress, const void *txaddress)
+{
+  DMA1_Channel3->CFGR &= ~DMA_CFGR3_EN;
+  DMA1_Channel2->CFGR &= ~DMA_CFGR3_EN;
+  //Buffer address
+  DMA1_Channel3->MADDR = (uint32_t)txaddress;
+  //Number of data transfer
+  DMA1_Channel3->CNTR = MAX_SPI_TRANSFER_SIZE;
+  //Buffer address
+  DMA1_Channel2->MADDR = (uint32_t)rxaddress;
+  //Number of data transfer
+  DMA1_Channel2->CNTR = MAX_SPI_TRANSFER_SIZE;
+}
+
+inline static void spi_enable(void)
+{
+  //Enable SPI1
+  SPI1->CTLR1 |= SPI_CTLR1_SPE;
+  dma_enable();
+}
+
+inline static void spi_disable(void *rxaddress, const void *txaddress)
+{
+  //Disable SPI1
+  dma_disable(rxaddress, txaddress);
+  SPI1->CTLR1 &= ~SPI_CTLR1_SPE;
+}
+
 void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
 {
   if (EXTI->INTFR & SPI_NCS_EXTI_LINE)
@@ -22,20 +57,6 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
 {
   timer_interrupt = 1;
   TIM1->INTFR = 0;
-}
-
-static void dma_disable(void *rxaddress, const void *txaddress)
-{
-  DMA1_Channel3->CFGR &= ~DMA_CFGR3_EN;
-  DMA1_Channel2->CFGR &= ~DMA_CFGR3_EN;
-  //Buffer address
-  DMA1_Channel3->MADDR = (uint32_t)txaddress;
-  //Number of data transfer
-  DMA1_Channel3->CNTR = MAX_SPI_TRANSFER_SIZE;
-  //Buffer address
-  DMA1_Channel2->MADDR = (uint32_t)rxaddress;
-  //Number of data transfer
-  DMA1_Channel2->CNTR = MAX_SPI_TRANSFER_SIZE;
 }
 
 /*
@@ -67,7 +88,7 @@ static void spi_init(void)
   //Set SPI1, max clock 48Mhz/2 = 24Mhz, slave mode, full-duplex mode,8bit data length
   //SPI1->CTLR1 = SPI_CTLR1_SSI | SPI_CTLR1_SSM;
   //Enable DMA for SPI TX and SPI RX
-  SPI1->CTLR2 = SPI_CTLR2_TXDMAEN | SPI_CTLR2_TXDMAEN;
+  SPI1->CTLR2 = SPI_CTLR2_TXDMAEN | SPI_CTLR2_RXDMAEN;
 
   //Set DMA1 - Channel 3, Very high priority, 8bit size, mem -> spi direction
   // memory increment and no perpheral increment
@@ -165,8 +186,28 @@ static void adc_init(void)
   while(ADC_GetCalibrationStatus(ADC1));
 }
 
+//Sets System clock frequency to 48MHz and configure HCLK, PCLK2 and PCLK1 prescalers.
+static void SetSysClock(void)
+{
+  FLASH->ACTLR = 1; // 1 wait (recommended 24=<SYSCLK=<48MHz)
+  /* HCLK = SYSCLK = APB1 */
+  RCC->CFGR0 = RCC_HPRE_DIV1 | RCC_PLLSRC_HSI_Mul2;
+  /* Enable PLL */
+  RCC->CTLR |= RCC_PLLON;
+  /* Wait till PLL is ready */
+  while((RCC->CTLR & RCC_PLLRDY) == 0)
+  {
+  }
+  RCC->CFGR0 |= RCC_SW_PLL;
+  /* Wait till PLL is used as system clock source */
+  while ((RCC->CFGR0 & RCC_SWS) != RCC_SWS_PLL)
+  {
+  }
+}
+
 void SysInit(void *rxaddress, const void *txaddress)
 {
+  SetSysClock();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
   SystemCoreClockUpdate();
   spi_init();
@@ -174,27 +215,6 @@ void SysInit(void *rxaddress, const void *txaddress)
   dma_disable(rxaddress, txaddress);
   timer_init();
   adc_init();
-}
-
-static void dma_enable(void)
-{
-  //Enable DMA Channels
-  DMA1_Channel3->CFGR |= DMA_CFGR3_EN;
-  DMA1_Channel2->CFGR |= DMA_CFGR2_EN;
-}
-
-void spi_enable(void)
-{
-  //Enable SPI1
-  SPI1->CTLR1 |= SPI_CTLR1_SPE;
-  dma_enable();
-}
-
-void spi_disable(void *rxaddress, const void *txaddress)
-{
-  //Disable SPI1
-  dma_disable(rxaddress, txaddress);
-  SPI1->CTLR1 &= ~SPI_CTLR1_SPE;
 }
 
 void ad9833_write(int channel, unsigned short data)
