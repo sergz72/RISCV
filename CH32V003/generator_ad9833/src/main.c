@@ -12,6 +12,12 @@ static unsigned int sweep_step;
 static unsigned short sweep_div;
 static int sweep_channel;
 static int last_command;
+#ifdef LED_TIMER_ON
+static int led_timer_counter, led_timer_state;
+#endif
+#ifdef LED_COMMAND_ON
+static int led_command_state;
+#endif
 
 volatile unsigned int command_ready, timer_interrupt;
 unsigned char spi_rxbuf[MAX_SPI_TRANSFER_SIZE];
@@ -45,6 +51,18 @@ static void timer_event(void)
         set_frequency_code(sweep_channel, sweep_freq_code, sweep_div);
         sweep_freq_code += sweep_step;
     }
+#ifdef LED_TIMER_ON
+    led_timer_counter++;
+    if (led_timer_counter == 200)
+    {
+        led_timer_state = !led_timer_state;
+        if (led_timer_state)
+            LED_TIMER_ON;
+        else
+            LED_TIMER_OFF;
+        led_timer_counter = 0;
+    }
+#endif
 }
 
 static void exec_dds_command(const dds_i2c_command *cmd)
@@ -76,6 +94,12 @@ static void exec_dds_command(const dds_i2c_command *cmd)
 
 int main(void)
 {
+#ifdef LED_COMMAND_ON
+    led_command_state = 0;
+#endif
+#ifdef LED_TIMER_ON
+    led_timer_state = 0;
+#endif
     command_ready = timer_interrupt = 0;
     status = 0;
     sweep_points = sweep_current_point = 0;
@@ -97,6 +121,13 @@ int main(void)
         }
         if (command_ready)
         {
+#ifdef LED_COMMAND_ON
+            led_command_state = !led_command_state;
+            if (led_command_state)
+                LED_COMMAND_ON;
+            else
+                LED_COMMAND_OFF;
+#endif
             if (last_command == GET_RESULTS_COMMAND)
                 status = 0;
             switch (spi_rxbuf[0])

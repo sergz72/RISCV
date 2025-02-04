@@ -93,11 +93,11 @@ static void spi_init(void)
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_5;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
   //PC7(MISO) - Multiplexed push pull output
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
 
   //Set SPI1, max clock 48Mhz/2 = 24Mhz, slave mode, full-duplex mode,8bit data length
   //SPI1->CTLR1 = SPI_CTLR1_SSI | SPI_CTLR1_SSM;
@@ -126,7 +126,7 @@ static void exti_init(void)
   GPIO_InitStructure.GPIO_Pin = SPI_NCS_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
 
   GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, SPI_NCS_EXTI_SOURCE);
   EXTI_InitStructure.EXTI_Line = SPI_NCS_EXTI_LINE;
@@ -219,11 +219,29 @@ static void SetSysClock(void)
   }
 }
 
+static void ports_init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+#ifdef LED_TIMER_ON
+  RCC->APB2PCENR |= LED_TIMER_IOPC;
+  GPIO_InitStructure.GPIO_Pin = LED_TIMER_PIN;
+  GPIO_Init(LED_TIMER_PORT, &GPIO_InitStructure);
+#endif
+#ifdef LED_COMMAND_ON
+  RCC->APB2PCENR |= LED_COMMAND_IOPC;
+  GPIO_InitStructure.GPIO_Pin = LED_COMMAND_PIN;
+  GPIO_Init(LED_COMMAND_PORT, &GPIO_InitStructure);
+#endif
+}
+
 void SysInit(void *rxaddress, const void *txaddress)
 {
   SetSysClock();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
   SystemCoreClockUpdate();
+  ports_init();
   spi_init();
   exti_init();
   dma_disable(rxaddress, txaddress);
