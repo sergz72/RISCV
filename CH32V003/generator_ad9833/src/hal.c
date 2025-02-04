@@ -86,7 +86,7 @@ static void spi_init(void)
   GPIO_InitTypeDef GPIO_InitStructure;
 
   //Enable clock for PORTC, SPI1 and DMA1
-  RCC->APB2PCENR |=  RCC_IOPCEN | RCC_SPI1EN;
+  RCC->APB2PCENR |=  RCC_IOPCEN | RCC_SPI1EN | RCC_AFIOEN;
   RCC->AHBPCENR |= RCC_DMA1EN;
 
   //PC6(MOSI) and PC5(SCK) - Floating inputs
