@@ -7,10 +7,6 @@
 
 #define MAX_SPI_TRANSFER_SIZE 512
 
-#define SPI_NCS_EXTI_LINE EXTI_Line4
-#define SPI_NCS_PIN GPIO_Pin_4
-#define SPI_NCS_EXTI_SOURCE GPIO_PinSource4
-
 #define ADC_PIN GPIO_Pin_3
 #define ADC_CHANNEL ADC_Channel_4
 

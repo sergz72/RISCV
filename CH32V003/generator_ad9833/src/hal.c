@@ -3,39 +3,26 @@
 #include <spi_soft.h>
 #include <ch32v00x_misc.h>
 
-inline static void dma_enable(void)
-{
-  //Enable DMA Channels
-  DMA1_Channel3->CFGR |= DMA_CFGR3_EN;
-  DMA1_Channel2->CFGR |= DMA_CFGR2_EN;
-}
+#define ADC_VREF 3300 //mv
 
-static void dma_disable(void *rxaddress, const void *txaddress)
+static void dma_reset(void *rxaddress, const void *txaddress)
 {
+  //Disable DMA Channels
   DMA1_Channel3->CFGR &= ~DMA_CFGR3_EN;
-  DMA1_Channel2->CFGR &= ~DMA_CFGR3_EN;
-  //Buffer address
-  DMA1_Channel3->MADDR = (uint32_t)txaddress;
+  DMA1_Channel2->CFGR &= ~DMA_CFGR2_EN;
+
+  //Number of data transfer
+  DMA1_Channel2->CNTR = MAX_SPI_TRANSFER_SIZE;
   //Number of data transfer
   DMA1_Channel3->CNTR = MAX_SPI_TRANSFER_SIZE;
   //Buffer address
+  DMA1_Channel3->MADDR = (uint32_t)txaddress;
+  //Buffer address
   DMA1_Channel2->MADDR = (uint32_t)rxaddress;
-  //Number of data transfer
-  DMA1_Channel2->CNTR = MAX_SPI_TRANSFER_SIZE;
-}
 
-inline static void spi_enable(void)
-{
-  //Enable SPI1
-  SPI1->CTLR1 |= SPI_CTLR1_SPE;
-  dma_enable();
-}
-
-inline static void spi_disable(void *rxaddress, const void *txaddress)
-{
-  //Disable SPI1
-  dma_disable(rxaddress, txaddress);
-  SPI1->CTLR1 &= ~SPI_CTLR1_SPE;
+  //Enable DMA Channels
+  DMA1_Channel3->CFGR |= DMA_CFGR3_EN;
+  DMA1_Channel2->CFGR |= DMA_CFGR2_EN;
 }
 
 #if __GNUC__ > 13
@@ -44,16 +31,11 @@ void __attribute__((naked)) EXTI7_0_IRQHandler(void)
 void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
 #endif
 {
-  if (EXTI->INTFR & SPI_NCS_EXTI_LINE)
+  if (EXTI->INTFR & EXTI_Line1)
   {
-    if (GPIOC->INDR & SPI_NCS_PIN) // Rising edge
-    {
-      spi_disable(spi_rxbuf, spi_txbufs[spi_rxbuf[0]]);
-      command_ready = 1;
-    }
-    else
-      spi_enable();
-    EXTI->INTFR = SPI_NCS_EXTI_LINE;
+    dma_reset(spi_rxbuf, spi_txbufs[spi_rxbuf[0]]);
+    command_ready = 1;
+    EXTI->INTFR = EXTI_Line1;
   }
 #if __GNUC__ > 13
   asm volatile ("mret");
@@ -73,6 +55,13 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
 #endif
 }
 
+inline static void spi_enable(void *rxaddress, const void *txaddress)
+{
+  dma_reset(rxaddress, txaddress);
+  //Enable SPI1
+  SPI1->CTLR1 |= SPI_CTLR1_SPE;
+}
+
 /*
   CH32V003F4P6
   PC1 - NSS
@@ -81,7 +70,7 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
   PC7 - MISO
  */
 
-static void spi_init(void)
+static void spi_init(void *rxaddress, const void *txaddress)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -89,7 +78,7 @@ static void spi_init(void)
   RCC->APB2PCENR |=  RCC_IOPCEN | RCC_SPI1EN | RCC_AFIOEN;
   RCC->AHBPCENR |= RCC_DMA1EN;
 
-  //PC6(MOSI) and PC5(SCK) - Floating inputs
+  //PC6(MOSI) and PC5(SCK) - inputs with pull down
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_5;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
@@ -97,6 +86,10 @@ static void spi_init(void)
   //PC7(MISO) - Multiplexed push pull output
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
+  //PC1(NSS) - input with pull up
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_Init(GPIOC, &GPIO_InitStructure);
 
   //Set SPI1, max clock 48Mhz/2 = 24Mhz, slave mode, full-duplex mode,8bit data length
@@ -115,23 +108,19 @@ static void spi_init(void)
   DMA1_Channel2->CFGR = DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1 | DMA_CFGR1_MINC;
   //Take SPI1 Data register address
   DMA1_Channel2->PADDR = (uint32_t)&SPI1->DATAR;
+
+  spi_enable(rxaddress, txaddress);
 }
 
 static void exti_init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
   EXTI_InitTypeDef EXTI_InitStructure;
   NVIC_InitTypeDef NVIC_InitStructure;
 
-  GPIO_InitStructure.GPIO_Pin = SPI_NCS_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-  GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, SPI_NCS_EXTI_SOURCE);
-  EXTI_InitStructure.EXTI_Line = SPI_NCS_EXTI_LINE;
+  GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
+  EXTI_InitStructure.EXTI_Line = EXTI_Line1;
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
 
@@ -242,9 +231,8 @@ void SysInit(void *rxaddress, const void *txaddress)
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
   SystemCoreClockUpdate();
   ports_init();
-  spi_init();
+  spi_init(rxaddress, txaddress);
   exti_init();
-  dma_disable(rxaddress, txaddress);
   timer_init();
   adc_init();
 }
@@ -257,10 +245,18 @@ void ad9833_write(int channel, unsigned short data)
   spi_command(0, cmd, &d, NULL, 1, 1);
 }
 
+/* ADC Software start mask */
+#define CTLR2_EXTTRIG_SWSTART_Set        ((uint32_t)0x00500000)
+#define CTLR2_SWSTART_Set                ((uint32_t)0x00400000)
+
 unsigned short adc_get(void)
 {
-  //todo
-  return 0;
+  ADC1->CTLR2 |= CTLR2_EXTTRIG_SWSTART_Set;
+  while (ADC1->CTLR2 & CTLR2_SWSTART_Set)
+    ;
+  unsigned int result = ADC1->RDATAR;
+  unsigned short mV = (unsigned short)((result * ADC_VREF) >> 10);
+  return mV;
 }
 
 void timer_enable(void)
