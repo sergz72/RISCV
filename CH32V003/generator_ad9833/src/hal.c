@@ -99,13 +99,13 @@ static void spi_init(void *rxaddress, const void *txaddress)
 
   //Set DMA1 - Channel 3, Very high priority, 8bit size, mem -> spi direction
   // memory increment and no perpheral increment
-  DMA1_Channel3->CFGR |= DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1 | DMA_CFGR1_DIR | DMA_CFGR1_MINC;
+  DMA1_Channel3->CFGR |= DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1 | DMA_CFGR1_DIR | DMA_CFGR1_MINC | DMA_CFGR1_PSIZE_0;
   //Take SPI1 Data register address
   DMA1_Channel3->PADDR = (uint32_t)&SPI1->DATAR;
 
   //Set DMA1 - Channel 2, Very high priority, 8bit size, spi -> mem direction
   // memory increment and no perpheral increment
-  DMA1_Channel2->CFGR = DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1 | DMA_CFGR1_MINC;
+  DMA1_Channel2->CFGR = DMA_CFGR1_PL_0 | DMA_CFGR1_PL_1 | DMA_CFGR1_MINC | DMA_CFGR1_PSIZE_0;
   //Take SPI1 Data register address
   DMA1_Channel2->PADDR = (uint32_t)&SPI1->DATAR;
 
