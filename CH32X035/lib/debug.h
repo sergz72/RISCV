@@ -2,7 +2,7 @@
  * File Name          : debug.h
  * Author             : WCH
  * Version            : V1.0.0
- * Date               : 2021/06/06
+ * Date               : 2023/04/06
  * Description        : This file contains all the functions prototypes for UART
  *                      Printf , Delay functions.
 *********************************************************************************
@@ -14,7 +14,7 @@
 #define __DEBUG_H
 
 #include "stdio.h"
-#include "ch32v20x.h"
+#include "ch32x035.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +30,16 @@ extern "C" {
 #define DEBUG   DEBUG_UART1
 #endif
 
+/* SDI Printf Definition */
+#define SDI_PR_CLOSE   0
+#define SDI_PR_OPEN    1
+
+#ifndef SDI_PRINT
+#define SDI_PRINT   SDI_PR_CLOSE
+#endif
+
 void USART_Printf_Init(uint32_t baudrate);
+void SDI_Printf_Enable(void);
 
 #if(DEBUG)
   #define PRINT(format, ...)    printf(format, ##__VA_ARGS__)

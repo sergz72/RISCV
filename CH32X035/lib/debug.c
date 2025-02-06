@@ -2,15 +2,18 @@
  * File Name          : debug.c
  * Author             : WCH
  * Version            : V1.0.0
- * Date               : 2021/06/06
+ * Date               : 2023/04/06
  * Description        : This file contains all the functions prototypes for UART
  *                      Printf , Delay functions.
 *********************************************************************************
 * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
-* Attention: This software (modified or not) and binary are used for 
+* Attention: This software (modified or not) and binary are used for
 * microcontroller manufactured by Nanjing Qinheng Microelectronics.
 *******************************************************************************/
 #include "debug.h"
+
+#define DEBUG_DATA0_ADDRESS  ((volatile uint32_t*)0xE0000380)
+#define DEBUG_DATA1_ADDRESS  ((volatile uint32_t*)0xE0000384)
 
 /*********************************************************************
  * @fn      USART_Printf_Init
@@ -27,12 +30,12 @@ void USART_Printf_Init(uint32_t baudrate)
     USART_InitTypeDef USART_InitStructure;
 
 #if(DEBUG == DEBUG_UART1)
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOB, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 #elif(DEBUG == DEBUG_UART2)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
@@ -47,7 +50,7 @@ void USART_Printf_Init(uint32_t baudrate)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
@@ -77,6 +80,22 @@ void USART_Printf_Init(uint32_t baudrate)
 }
 
 /*********************************************************************
+ * @fn      SDI_Printf_Enable
+ *
+ * @brief   Initializes the SDI printf Function.
+ *
+ * @param   None
+ *
+ * @return  None
+ */
+void SDI_Printf_Enable(void)
+{
+    *(DEBUG_DATA0_ADDRESS) = 0;
+    Delay_Init();
+    Delay_Ms(1);
+}
+
+/*********************************************************************
  * @fn      _write
  *
  * @brief   Support Printf Function
@@ -84,13 +103,50 @@ void USART_Printf_Init(uint32_t baudrate)
  * @param   *buf - UART send Data.
  *          size - Data length
  *
- * @return  size: Data length
+ * @return  size - Data length
  */
 __attribute__((used))
 int _write(int fd, char *buf, int size)
 {
-    int i;
+    int i = 0;
 
+#if (SDI_PRINT == SDI_PR_OPEN)
+    int writeSize = size;
+
+    do
+    {
+
+        /**
+         * data0  data1 共8个字节
+         * data0最低位的字节存放长度，最大为 7
+         *
+         */
+
+        while( (*(DEBUG_DATA0_ADDRESS) != 0u))
+        {
+
+        }
+
+        if(writeSize>7)
+        {
+            *(DEBUG_DATA1_ADDRESS) = (*(buf+i+3)) | (*(buf+i+4)<<8) | (*(buf+i+5)<<16) | (*(buf+i+6)<<24);
+            *(DEBUG_DATA0_ADDRESS) = (7u) | (*(buf+i)<<8) | (*(buf+i+1)<<16) | (*(buf+i+2)<<24);
+
+            i += 7;
+            writeSize -= 7;
+        }
+        else
+        {
+            *(DEBUG_DATA1_ADDRESS) = (*(buf+i+3)) | (*(buf+i+4)<<8) | (*(buf+i+5)<<16) | (*(buf+i+6)<<24);
+            *(DEBUG_DATA0_ADDRESS) = (writeSize) | (*(buf+i)<<8) | (*(buf+i+1)<<16) | (*(buf+i+2)<<24);
+
+            writeSize = 0;
+        }
+
+    } while (writeSize);
+
+
+#else
     for(i = 0; i < size; i++){
 #if(DEBUG == DEBUG_UART1)
         while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
@@ -103,7 +159,7 @@ int _write(int fd, char *buf, int size)
         USART_SendData(USART3, *buf++);
 #endif
     }
-
+#endif
     return size;
 }
 
@@ -112,8 +168,9 @@ int _write(int fd, char *buf, int size)
  *
  * @brief   Change the spatial position of data segment.
  *
- * @return  size: Data length
+ * @return  size - Data length
  */
+__attribute__((used))
 void *_sbrk(ptrdiff_t incr)
 {
     extern char _end[];

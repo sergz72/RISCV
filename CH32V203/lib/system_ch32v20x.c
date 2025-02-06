@@ -24,7 +24,7 @@
 //#define SYSCLK_FREQ_72MHz_HSE  72000000
 //#define SYSCLK_FREQ_96MHz_HSE  96000000
 //#define SYSCLK_FREQ_120MHz_HSE  120000000
-#define SYSCLK_FREQ_144MHz_HSE  144000000
+//#define SYSCLK_FREQ_144MHz_HSE  144000000
 //#define SYSCLK_FREQ_HSI    HSI_VALUE
 //#define SYSCLK_FREQ_48MHz_HSI  48000000
 //#define SYSCLK_FREQ_56MHz_HSI  56000000
@@ -299,6 +299,8 @@ static void SetSysClockToHSE(void)
 		/* If HSE fails to start-up, the application will have wrong clock 
      * configuration. User can add here some code to deal with this error 
 		 */
+      while (1)
+          ;
   }  
 }
 
@@ -339,7 +341,7 @@ static void SetSysClockTo48_HSE(void)
     RCC->CFGR0 |= (uint32_t)RCC_HPRE_DIV1;    
     /* PCLK2 = HCLK */
     RCC->CFGR0 |= (uint32_t)RCC_PPRE2_DIV1;  
-    /* PCLK1 = HCLK */
+    /* PCLK1 = HCLK/2 */
     RCC->CFGR0 |= (uint32_t)RCC_PPRE1_DIV2;
 
     /*  CH32V20x_D6-PLL configuration: PLLCLK = HSE * 6 = 48 MHz (HSE=8MHZ)
@@ -370,6 +372,8 @@ static void SetSysClockTo48_HSE(void)
 		 * If HSE fails to start-up, the application will have wrong clock 
      * configuration. User can add here some code to deal with this error 
 		 */
+     while (1)
+        ;
   } 
 }
 
@@ -442,6 +446,8 @@ static void SetSysClockTo56_HSE(void)
 		 * If HSE fails to start-up, the application will have wrong clock 
      * configuration. User can add here some code to deal with this error 
 		 */
+     while (1)
+        ;
   } 
 }
 
@@ -514,6 +520,8 @@ static void SetSysClockTo72_HSE(void)
 		 * If HSE fails to start-up, the application will have wrong clock 
      * configuration. User can add here some code to deal with this error 
 		 */
+     while (1)
+        ;
   }
 }
 
@@ -587,6 +595,8 @@ static void SetSysClockTo96_HSE(void)
          * If HSE fails to start-up, the application will have wrong clock
      * configuration. User can add here some code to deal with this error
          */
+     while (1)
+        ;
   }
 }
 
@@ -666,6 +676,8 @@ static void SetSysClockTo120_HSE(void)
          * If HSE fails to start-up, the application will have wrong clock
          * configuration. User can add here some code to deal with this error
          */
+     while (1)
+        ;
     }
 }
 #elif defined SYSCLK_FREQ_144MHz_HSE
@@ -737,6 +749,8 @@ static void SetSysClockTo144_HSE(void)
          * If HSE fails to start-up, the application will have wrong clock
      * configuration. User can add here some code to deal with this error
          */
+     while (1)
+        ;
   }
 }
 
