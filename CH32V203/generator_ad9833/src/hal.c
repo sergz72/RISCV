@@ -327,7 +327,7 @@ static void adc_init(void)
 }
 
 /*
- *LED_TIMER   = PA2
+ *LED_TIMER   = PB2
  *LED_COMMAND = PA3
  *INTERRUPT   = PB7
  */
