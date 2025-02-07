@@ -31,7 +31,10 @@ const void *txbufs[] =
     &device_config, // get device config command
     &status,        // get status command
     &status,        // dds command
-    txbuf           // get sweep results command
+    txbuf,          // get sweep results command
+    &status,        // command 5
+    &status,        // command 6
+    &status,        // command 7
 };
 
 static void timer_event(void)

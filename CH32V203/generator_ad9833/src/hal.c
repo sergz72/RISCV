@@ -355,6 +355,7 @@ static void ports_init(void)
 
 void SysInit(void *rxaddress, const void *txaddress)
 {
+  pointers_reset(rxaddress, txaddress);
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE );
   ports_init();
@@ -367,7 +368,6 @@ void SysInit(void *rxaddress, const void *txaddress)
   spi_master_init();
   timer_init();
   adc_init();
-  pointers_reset(rxaddress, txaddress);
 }
 
 void ad9833_write(int channel, unsigned short data)

@@ -32,7 +32,6 @@ file(GLOB SOURCES
         "../lib/src/ch32x035_exti.c"
         "../lib/src/ch32x035_tim.c"
         "../lib/src/ch32x035_adc.c"
-        "../lib/src/ch32x035_i2c.c"
         "../lib/src/ch32x035_spi.c"
         "../startup_ch32x035.S"
         "../../../ARM/common_lib/rf/ad9833.c"
