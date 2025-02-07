@@ -1,10 +1,10 @@
 #include "hal.h"
-#include <ch32v20x.h>
+#include <ch32x035.h>
 #include "handler.h"
+#include <spi_soft.h>
 
 #define ADC_VREF 33000 //x0.1mv
 
-static short calibrattion_val;
 static unsigned char *rxbuf_p, *txbuf_p;
 
 static inline void pointers_reset(void *rxaddress, const void *txaddress)
@@ -14,9 +14,9 @@ static inline void pointers_reset(void *rxaddress, const void *txaddress)
 }
 
 #if __GNUC__ > 13
-void __attribute__((naked)) TIM2_IRQHandler(void)
+void __attribute__((naked)) TIM2_UP_IRQHandler(void)
 #else
-void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_IRQHandler(void)
+void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_UP_IRQHandler(void)
 #endif
 {
   timer_interrupt = 1;
@@ -79,8 +79,8 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) I2C1_ER_IRQHandler(void)
 
 
 /*
- * I2C1 SCL = PB8
- * I2C1 SDA = PB9
+ * I2C1 SCL = PA10
+ * I2C1 SDA = PA11
  */
 
 static void i2c_init(void)
@@ -89,13 +89,12 @@ static void i2c_init(void)
   I2C_InitTypeDef I2C_InitTSturcture;
   NVIC_InitTypeDef NVIC_InitStructure;
 
-	GPIO_PinRemapConfig(GPIO_Remap_I2C1, ENABLE);
 	RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1, ENABLE );
 
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init( GPIOB, &GPIO_InitStructure );
+  GPIO_Init( GPIOA, &GPIO_InitStructure );
 
   I2C_InitTSturcture.I2C_ClockSpeed = 100000;
   I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
@@ -123,6 +122,43 @@ static void i2c_init(void)
   I2C_ITConfig( I2C1, I2C_IT_EVT, ENABLE );
   I2C_ITConfig( I2C1, I2C_IT_ERR, ENABLE );
 }
+
+/*
+ * SPI1_NSS  = PA4
+ * SPI1_SCK  = PA5
+ * SPI1_MISO = PA6
+ * SPI1_MOSI = PA7
+ */
+
+static void spi_master_init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  SPI_InitTypeDef SPI_InitStructure;
+
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_7;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init( GPIOA, &GPIO_InitStructure );
+
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+  GPIO_Init( GPIOA, &GPIO_InitStructure );
+
+  SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+  SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+  SPI_InitStructure.SPI_DataSize = SPI_DataSize_16b;
+  SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+  SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+  SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;
+  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
+  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;
+  SPI_InitStructure.SPI_CRCPolynomial = 7;
+  SPI_Init( SPI1, &SPI_InitStructure );
+
+  SPI_Cmd( SPI1, ENABLE );
+}
 #else
 #if __GNUC__ > 13
 void __attribute__((naked)) SPI1_IRQHandler(void)
@@ -141,9 +177,9 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) SPI1_IRQHandler(void)
 }
 
 #if __GNUC__ > 13
-void __attribute__((naked)) EXTI4_IRQHandler(void)
+void __attribute__((naked)) EXTI7_0_IRQHandler(void)
 #else
-void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI4_IRQHandler(void)
+void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
 #endif
 {
   pointers_reset(rxbuf, txbufs[rxbuf[0]]);
@@ -216,51 +252,34 @@ void exti_init(void)
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
 
-  NVIC_InitStructure.NVIC_IRQChannel = EXTI4_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannel = EXTI7_0_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; //high priority
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
 }
 
-#endif
-
 /*
- * SPI2_NSS  = PB12
- * SPI2_SCK  = PB13
- * SPI2_MISO = PB14
- * SPI2_MOSI = PB15
+ * SPI_NSS  = PC15
+ * SPI_SCK  = PC14
+ * SPI_MOSI = PB12
  */
 
 static void spi_master_init(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
-  SPI_InitTypeDef SPI_InitStructure;
 
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_15;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14 | GPIO_Pin_15;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init( GPIOB, &GPIO_InitStructure );
+  GPIO_Init( GPIOC, &GPIO_InitStructure );
 
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_Init( GPIOB, &GPIO_InitStructure );
-
-  SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-  SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-  SPI_InitStructure.SPI_DataSize = SPI_DataSize_16b;
-  SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-  SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-  SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;
-  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
-  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;
-  SPI_InitStructure.SPI_CRCPolynomial = 7;
-  SPI_Init( SPI2, &SPI_InitStructure );
-
-  SPI_Cmd( SPI2, ENABLE );
 }
+
+#endif
 
 static void timer_init(void)
 {
@@ -278,7 +297,7 @@ static void timer_init(void)
 
   TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 
-  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannel = TIM2_UP_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //low priority
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -297,11 +316,11 @@ static void adc_init(void)
   GPIO_InitTypeDef GPIO_InitStructure;
 
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-  RCC_ADCCLKConfig(RCC_PCLK2_Div8);
+  ADC_CLKConfig(ADC1, ADC_CLK_Div6);
 
   GPIO_InitStructure.GPIO_Pin = ADC_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(ADC_PORT, &GPIO_InitStructure);
 
   ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
@@ -312,19 +331,9 @@ static void adc_init(void)
   ADC_InitStructure.ADC_NbrOfChannel = 1;
   ADC_Init(ADC1, &ADC_InitStructure);
 
-  ADC_RegularChannelConfig(ADC1, ADC_CHANNEL, 1, ADC_SampleTime_239Cycles5);
+  ADC_RegularChannelConfig(ADC1, ADC_CHANNEL, 1, ADC_SampleTime_11Cycles);
 
   ADC_Cmd(ADC1, ENABLE);
-
-  ADC_BufferCmd(ADC1, DISABLE); //disable buffer
-  ADC_ResetCalibration(ADC1);
-  while(ADC_GetResetCalibrationStatus(ADC1))
-    ;
-  ADC_StartCalibration(ADC1);
-  while(ADC_GetCalibrationStatus(ADC1))
-    ;
-  calibrattion_val = Get_CalibrationValue(ADC1);
-  //ADC_BufferCmd(ADC1, ENABLE); //enable buffer
 }
 
 /*
@@ -337,9 +346,10 @@ static void ports_init(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
 #ifdef INTERFACE_I2C
   GPIO_InitStructure.GPIO_Pin = INTERRUPT_PIN;
   GPIO_Init(INTERRUPT_PIN_PORT, &GPIO_InitStructure);
@@ -373,17 +383,14 @@ void SysInit(void *rxaddress, const void *txaddress)
 
 void ad9833_write(int channel, unsigned short data)
 {
-  SPI_I2S_SendData(SPI2, data);
-}
-
-static unsigned short Get_ConversionVal(unsigned short val)
-{
-  short v = (short)val + calibrattion_val;
-  if (v <= 0)
-    return 0;
-  if (v > 4095)
-    return 4095;
-  return v;
+#ifdef INTERFACE_I2C
+  SPI_I2S_SendData(SPI1, data);
+#else
+  unsigned char cmd, d;
+  cmd = data >> 8;
+  d = data & 0xFF;
+  spi_command(0, cmd, &d, NULL, 1, 1);
+#endif
 }
 
 /* ADC Software start mask */
@@ -395,7 +402,7 @@ unsigned short adc_get(void)
   ADC1->CTLR2 |= CTLR2_EXTTRIG_SWSTART_Set;
   while (ADC1->CTLR2 & CTLR2_SWSTART_Set)
     ;
-  unsigned int result = Get_ConversionVal(ADC1->RDATAR);
+  unsigned int result = ADC1->RDATAR;
   unsigned short mV = (unsigned short)((result * ADC_VREF) >> 12);
   return mV;
 }
