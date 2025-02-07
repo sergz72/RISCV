@@ -36,25 +36,23 @@ void __attribute__((interrupt("WCH-Interrupt-fast"))) I2C1_EV_IRQHandler(void)
   unsigned int status = I2C1->STAR1;
   unsigned int dummy;
 
-  if (status & I2C_IT_ADDR & (status & (I2C_FLAG_TRA | I2C_FLAG_TXE) != I2C_FLAG_TRA | I2C_FLAG_TXE)) // read mode
+  if (status & I2C_IT_ADDR) // address match
   {
     dummy = I2C1->STAR2;
     (void)dummy;
+    pointers_reset(rxbuf, txbufs[rxbuf[0] & 7]);
   }
-  if (status & I2C_IT_RXNE) // read
+  else if (status & I2C_IT_RXNE) // read
     *rxbuf_p++ = I2C1->DATAR;
   else if (status & I2C_IT_TXE) // write
     I2C1->DATAR = *txbuf_p++;
   else if (status & I2C_IT_STOPF)
   {
     I2C1->CTLR1 &= I2C1->CTLR1;
-    ((void)(I2C1->STAR1));
-    pointers_reset(rxbuf, txbufs[rxbuf[0]]);
     command_ready = 1;
   }
   else if (status & (I2C_IT_BTF | I2C_IT_SB))
   {
-    ((void)(I2C1->STAR1));
     dummy = I2C1->DATAR;
     (void)dummy;
   }
@@ -100,7 +98,7 @@ static void i2c_init(void)
   I2C_InitTSturcture.I2C_ClockSpeed = 100000;
   I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
   I2C_InitTSturcture.I2C_DutyCycle = I2C_DutyCycle_16_9;
-  I2C_InitTSturcture.I2C_OwnAddress1 = I2C_ADDRESS;
+  I2C_InitTSturcture.I2C_OwnAddress1 = I2C_ADDRESS << 1;
   I2C_InitTSturcture.I2C_Ack = I2C_Ack_Enable;
   I2C_InitTSturcture.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
   I2C_Init( I2C1, &I2C_InitTSturcture );
