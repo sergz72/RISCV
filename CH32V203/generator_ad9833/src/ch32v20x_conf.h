@@ -1,7 +1,7 @@
 #ifndef __CH32V20X_CONF_H
 #define __CH32V20X_CONF_H
 
-#define INTERFACE_I2C
+//#define INTERFACE_I2C
 
 #ifdef INTERFACE_I2C
 #define SYSCLK_FREQ_48MHz_HSE  48000000
