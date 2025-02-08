@@ -48,7 +48,7 @@ void __attribute__((naked)) EXTI7_0_IRQHandler(void)
 void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI7_0_IRQHandler(void)
 #endif
 {
-  pointers_reset(rxbuf, txbufs[rxbuf[0]]);
+  pointers_reset(rxbuf, txbufs[rxbuf[0] & 7]);
   SPI1->DATAR = *txbuf_p++;
   command_ready = 1;
   EXTI->INTFR = 0x1FFFFF;
@@ -92,7 +92,7 @@ static void spi_slave_init(void)
   SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
   SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;
   SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
-  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_LSB;
+  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
   SPI_InitStructure.SPI_CRCPolynomial = 7;
   SPI_Init( SPI1, &SPI_InitStructure );
 

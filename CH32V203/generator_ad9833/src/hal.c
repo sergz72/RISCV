@@ -144,7 +144,7 @@ void __attribute__((naked)) EXTI4_IRQHandler(void)
 void __attribute__((interrupt("WCH-Interrupt-fast"))) EXTI4_IRQHandler(void)
 #endif
 {
-  pointers_reset(rxbuf, txbufs[rxbuf[0]]);
+  pointers_reset(rxbuf, txbufs[rxbuf[0] & 7]);
   SPI1->DATAR = *txbuf_p++;
   command_ready = 1;
   EXTI->INTFR = 0x1FFFFF;
