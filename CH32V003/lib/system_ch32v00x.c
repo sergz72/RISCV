@@ -49,8 +49,6 @@ static void SetSysClock(void);
 
 #ifdef SYSCLK_FREQ_8MHz_HSI
   static void SetSysClockTo_8MHz_HSI(void);
-#elif defined SYSCLK_FREQ_24MHZ_HSI
-  static void SetSysClockTo_24MHZ_HSI(void);
 #elif defined SYSCLK_FREQ_48MHZ_HSI
   static void SetSysClockTo_48MHZ_HSI(void);
 #elif defined SYSCLK_FREQ_8MHz_HSE
@@ -59,6 +57,8 @@ static void SetSysClock(void);
   static void SetSysClockTo_24MHz_HSE(void);
 #elif defined SYSCLK_FREQ_48MHz_HSE
   static void SetSysClockTo_48MHz_HSE(void);
+#else
+  static void SetSysClockTo_24MHZ_HSI(void);
 #endif
 
 
@@ -151,8 +151,6 @@ GPIOD->BSHR =0x2;
 //GPIO_IPD_Unused();
 #ifdef SYSCLK_FREQ_8MHz_HSI
     SetSysClockTo_8MHz_HSI();
-#elif defined SYSCLK_FREQ_24MHZ_HSI
-    SetSysClockTo_24MHZ_HSI();
 #elif defined SYSCLK_FREQ_48MHZ_HSI
     SetSysClockTo_48MHZ_HSI();
 #elif defined SYSCLK_FREQ_8MHz_HSE
@@ -161,6 +159,8 @@ GPIOD->BSHR =0x2;
     SetSysClockTo_24MHz_HSE();
 #elif defined SYSCLK_FREQ_48MHz_HSE
     SetSysClockTo_48MHz_HSE();
+#else
+    SetSysClockTo_24MHZ_HSI();
 #endif
  
  /* If none of the define above is enabled, the HSI is used as System clock.
