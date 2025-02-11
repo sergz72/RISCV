@@ -10,9 +10,9 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 SET(LINKER_SCRIPT ../../Link.ld)
 
 if (MOUNRIVER)
-    SET(COMMON_FLAGS "-march=rv32ecxw -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+    SET(COMMON_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 else()
-    SET(COMMON_FLAGS "-march=rv32ec_zicsr -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+    SET(COMMON_FLAGS " -march=rv32imac_zicsr -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 endif()
 
 SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
@@ -25,15 +25,14 @@ file(GLOB SOURCES
         "src/*.c"
         "../lib/delay.c"
         "../lib/core_riscv.c"
-        "../lib/system_ch32v00x.c"
-        "../lib/src/ch32v00x_misc.c"
-        "../lib/src/ch32v00x_rcc.c"
-        "../lib/src/ch32v00x_gpio.c"
-        "../lib/src/ch32v00x_i2c.c"
-        "../lib/src/ch32v00x_tim.c"
-        "../startup_ch32v00x.S"
-        "../../../ARM/common_lib/myprintf.c"
-        "../../../ARM/common_lib/ultoa.c"
+        "../lib/system_ch32v20x.c"
+        "../lib/src/ch32v20x_misc.c"
+        "../lib/src/ch32v20x_rcc.c"
+        "../lib/src/ch32v20x_gpio.c"
+        "../lib/src/ch32v20x_tim.c"
+        "../lib/src/ch32v20x_i2c.c"
+        "../lib/src/ch32v20x_opa.c"
+        "../startup_ch32v20x_D6.S"
         "../../../ARM/common_lib/sensor/mcp3426.c"
         "../../../ARM/common_lib/display/lcd.c"
         "../../../ARM/common_lib/display/lcd_ssd1306.c"
@@ -41,7 +40,7 @@ file(GLOB SOURCES
         "../../../ARM/common_lib/display/fonts/font18.c"
 )
 
-include_directories(src ../lib ../lib/inc ../../../ARM/common_lib ../../../ARM/common_lib/sensor ../../../ARM/common_lib/display)
+include_directories(src ../lib ../lib/inc ../../../ARM/common_lib/sensor ../../../ARM/common_lib ../../../ARM/common_lib/display)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
