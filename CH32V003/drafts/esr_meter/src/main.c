@@ -3,6 +3,8 @@
 #include <delay.h>
 #include <fonts/font18.h>
 
+#include "lcd_ks0108_buffered.h"
+
 #define MCP3426_DEVICE_ID 0xD6
 #define VALUE_MAX 999999
 #define VREF 256000 // uV
@@ -70,10 +72,12 @@ int main(void)
   SysInit();
 
   LcdInit();
+  LcdScreenFill(BLACK_COLOR);
 
   while (1)
   {
     led_toggle();
+    Delay_Ms(250);
     int v1 = adc_get(&dcfg1);
     int v2 = adc_get(&dcfg2);
     int value;

@@ -91,8 +91,9 @@ void SysInit(void)
 
 static int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout)
 {
-  I2C1->CTLR1 |= I2C_CTLR1_START;
   unsigned int t;
+
+  I2C1->CTLR1 |= I2C_CTLR1_START;
 
   t = timeout;
   while( !I2C_CheckEvent( I2C1, I2C_EVENT_MASTER_MODE_SELECT ) )
@@ -127,8 +128,9 @@ static int i2c_read(unsigned char address, unsigned char *data, unsigned int l, 
 
 static int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout)
 {
-  I2C1->CTLR1 |= I2C_CTLR1_START;
   unsigned int t;
+
+  I2C1->CTLR1 |= I2C_CTLR1_START;
 
   t = timeout;
   while( !I2C_CheckEvent( I2C1, I2C_EVENT_MASTER_MODE_SELECT ) )
@@ -161,7 +163,7 @@ static int i2c_write(unsigned char address, unsigned char *data, unsigned int l,
   {
     t--;
     if (!t)
-      return 3;
+      return 4;
   }
   I2C_GenerateSTOP( I2C1, ENABLE );
   return 0;

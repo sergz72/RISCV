@@ -23,8 +23,8 @@
  */
 #define PWM_PIN GPIO_Pin_4
 #define PWM_PORT GPIOC
-#define PWM_PERIOD 480
-#define PWM_PULSE 48
+#define PWM_PERIOD 80
+#define PWM_PULSE 8
 #define PWM_OCINIT TIM_OC4Init
 #define PWM_OCPRELOADCONFIG TIM_OC4PreloadConfig
 

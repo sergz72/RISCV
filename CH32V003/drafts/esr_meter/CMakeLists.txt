@@ -10,9 +10,9 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 SET(LINKER_SCRIPT ../../Link.ld)
 
 if (MOUNRIVER)
-    SET(COMMON_FLAGS "-march=rv32ecxw -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+    SET(COMMON_FLAGS "-march=rv32ecxw -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 else()
-    SET(COMMON_FLAGS "-march=rv32ec_zicsr -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+    SET(COMMON_FLAGS "-march=rv32ec_zicsr -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 endif()
 
 SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
