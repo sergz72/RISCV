@@ -29,6 +29,13 @@
 #define PWM_OCPRELOADCONFIG TIM_OC4PreloadConfig
 
 /*
+ *PA2(3) = button
+ */
+#define BUTTON_PIN GPIO_Pin_2
+#define BUTTON_PORT GPIOA
+#define BUTTON_PRESSED (BUTTON_PORT->INDR & BUTTON_PIN)
+
+/*
  *PD6 = LED
  */
 #define LED_TIMER_PIN GPIO_Pin_6

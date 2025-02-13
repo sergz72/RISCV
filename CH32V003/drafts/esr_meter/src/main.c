@@ -11,6 +11,7 @@
 #define R 100000 //uOhm
 
 static int led_timer_state;
+static int v2_r0;
 
 static const MCP3426Config dcfg1 = {
   .channel = MCP3426_CHANNEL_1,
@@ -50,12 +51,11 @@ static int adc_get(const MCP3426Config *dcfg)
   return voltage;
 }
 
+//v1 is on RLoad
+//v2 is on capacitor
 static int calculate_value(int v1, int v2)
 {
-  if (v2 >= v1)
-    return 0;
-  long long int delta = v1 - v2; // uV
-  int r = (int)(delta * R / v2);
+  int r = (int)((long long int)v2 * R / v1);
   return r > VALUE_MAX ? VALUE_MAX : r;
 }
 
@@ -68,6 +68,7 @@ static void show_result(int value)
 int main(void)
 {
   led_timer_state = 0;
+  v2_r0 = 0;
 
   SysInit();
 
@@ -80,11 +81,15 @@ int main(void)
     Delay_Ms(250);
     int v1 = adc_get(&dcfg1);
     int v2 = adc_get(&dcfg2);
+    if (BUTTON_PRESSED && v2 > 0)
+      v2_r0 = v2;
     int value;
-    if (v1 == 0 || v2 == 0)
+    if (v1 <= 0)
       value = VALUE_MAX;
+    else if (v2 <= v2_r0)
+      value = 0;
     else
-      value = calculate_value(v1, v2);
+      value = calculate_value(v1, v2 - v2_r0);
     show_result(value);
   }
 }
