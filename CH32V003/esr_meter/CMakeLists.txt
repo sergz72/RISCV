@@ -32,16 +32,16 @@ file(GLOB SOURCES
         "../lib/src/ch32v00x_i2c.c"
         "../lib/src/ch32v00x_tim.c"
         "../startup_ch32v00x.S"
-        "../../../ARM/common_lib/myprintf.c"
-        "../../../ARM/common_lib/ultoa.c"
-        "../../../ARM/common_lib/sensor/mcp3426.c"
-        "../../../ARM/common_lib/display/lcd.c"
-        "../../../ARM/common_lib/display/lcd_ssd1306.c"
-        "../../../ARM/common_lib/display/font.c"
-        "../../../ARM/common_lib/display/fonts/font18.c"
+        "../../../ARM_CLION/common_lib/myprintf.c"
+        "../../../ARM_CLION/common_lib/ultoa.c"
+        "../../../ARM_CLION/common_lib/sensor/mcp3426.c"
+        "../../../ARM_CLION/common_lib/display/lcd.c"
+        "../../../ARM_CLION/common_lib/display/lcd_ssd1306.c"
+        "../../../ARM_CLION/common_lib/display/font.c"
+        "../../../ARM_CLION/common_lib/display/fonts/font18.c"
 )
 
-include_directories(src ../lib ../lib/inc ../../../ARM/common_lib ../../../ARM/common_lib/sensor ../../../ARM/common_lib/display)
+include_directories(src ../lib ../lib/inc ../../../ARM_CLION/common_lib ../../../ARM_CLION/common_lib/sensor ../../../ARM_CLION/common_lib/display)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

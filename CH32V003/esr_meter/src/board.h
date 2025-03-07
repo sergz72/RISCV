@@ -23,8 +23,8 @@
  */
 #define PWM_PIN GPIO_Pin_4
 #define PWM_PORT GPIOC
-#define PWM_PERIOD 80
-#define PWM_PULSE 8
+#define PWM_PERIOD 800
+#define PWM_PULSE 80
 #define PWM_OCINIT TIM_OC4Init
 #define PWM_OCPRELOADCONFIG TIM_OC4PreloadConfig
 
@@ -33,7 +33,7 @@
  */
 #define BUTTON_PIN GPIO_Pin_2
 #define BUTTON_PORT GPIOA
-#define BUTTON_PRESSED (BUTTON_PORT->INDR & BUTTON_PIN)
+#define BUTTON_PRESSED !(BUTTON_PORT->INDR & BUTTON_PIN)
 
 /*
  *PD6 = LED

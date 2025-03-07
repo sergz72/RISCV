@@ -8,10 +8,10 @@
 #define MCP3426_DEVICE_ID 0xD6
 #define VALUE_MAX 999999
 #define VREF 256000 // uV
-#define R 100000 //uOhm
+#define R 470000 //uOhm
 
 static int led_timer_state;
-static int v2_r0;
+static int r0;
 
 static const MCP3426Config dcfg1 = {
   .channel = MCP3426_CHANNEL_1,
@@ -51,11 +51,12 @@ static int adc_get(const MCP3426Config *dcfg)
   return voltage;
 }
 
-//v1 is on RLoad
-//v2 is on capacitor
-static int calculate_value(int v1, int v2)
+//vt is on transformer out
+//vr is on RLoad
+static int calculate_value(int vt, int vr)
 {
-  int r = (int)((long long int)v2 * R / v1);
+  int vcx = vt - vr;
+  int r = (int)((long long int)vcx * R / vr);
   return r > VALUE_MAX ? VALUE_MAX : r;
 }
 
@@ -68,7 +69,7 @@ static void show_result(int value)
 int main(void)
 {
   led_timer_state = 0;
-  v2_r0 = 0;
+  r0 = 0;
 
   SysInit();
 
@@ -79,17 +80,15 @@ int main(void)
   {
     led_toggle();
     Delay_Ms(250);
-    int v1 = adc_get(&dcfg1);
-    int v2 = adc_get(&dcfg2);
-    if (BUTTON_PRESSED && v2 > 0)
-      v2_r0 = v2;
+    int vt = adc_get(&dcfg1); // transformer out
+    int vr = adc_get(&dcfg2); // transformer out + rc
     int value;
-    if (v1 <= 0)
-      value = VALUE_MAX;
-    else if (v2 <= v2_r0)
+    if (vr >= vt)
       value = 0;
     else
-      value = calculate_value(v1, v2 - v2_r0);
-    show_result(value);
+      value = calculate_value(vt, vr);
+    if (BUTTON_PRESSED && vr > 0)
+      r0 = value;
+    show_result(value - r0);
   }
 }

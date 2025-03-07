@@ -16,7 +16,7 @@ static void ports_init(void)
 
 
   GPIO_InitStructure.GPIO_Pin = BUTTON_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_Init(BUTTON_PORT, &GPIO_InitStructure);
 }
 
