@@ -99,4 +99,6 @@ void SPI_CS_CLR(int channel);
 void SPI_CLK_SET(int channel);
 void SPI_CLK_CLR(int channel);
 
+#include <delay.h>
+
 #endif

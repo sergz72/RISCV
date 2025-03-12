@@ -1,7 +1,8 @@
 #include "board.h"
 #include <ch32v20x_gpio.h>
+#include <ch32v20x_tim.h>
+#include <ch32v20x_misc.h>
 #include "debug.h"
-#include "delay.h"
 #include "usb_cdc.h"
 #include "hw_config.h"
 #include "usb_init.h"
@@ -87,6 +88,13 @@ static const ModulePredefinedInfo module_predefined_info[MAX_DEVICES] =
 };
 
 static int led_state;
+static volatile unsigned int time_hi;
+
+void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_IRQHandler(void)
+{
+  time_hi++;
+  TIM2->INTFR = 0;
+}
 
 void blink_led(void)
 {
@@ -236,10 +244,41 @@ int mcp3421Write(int channel, unsigned char address, unsigned char data)
   return i2c_soft_command(channel, address, NULL, 0, &data, 1, NULL, 0, I2C_TIMEOUT);
 }
 
+static void TIM2Init(void)
+{
+  NVIC_InitTypeDef NVIC_InitStructure;
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
+
+  time_hi = 0;
+  // 65ms interrupt
+  TIM_TimeBaseInitStructure.TIM_Period = 0xFFFF;
+  TIM_TimeBaseInitStructure.TIM_Prescaler = SystemCoreClock/1000000-1;
+  TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
+
+  TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+
+  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //low priority
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+
+  TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+  TIM_Cmd(TIM2, ENABLE);
+}
+
 unsigned long long int time_us(void)
 {
-  //todo
-  return 0;
+  unsigned int time_low;
+  unsigned int time_high;
+  do
+  {
+    time_high = time_hi;
+    time_low = TIM2->CNT;
+  } while (time_high != time_hi);
+  return ((unsigned long long int)time_high << 16) | time_low;
 }
 
 void delay_us(unsigned int us)
@@ -417,4 +456,6 @@ void configure_hal(void)
   USB_Interrupts_Config();
 
   USB_Endp_Init();
+
+  TIM2Init();
 }

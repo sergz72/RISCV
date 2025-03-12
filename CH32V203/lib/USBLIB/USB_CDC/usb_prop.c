@@ -15,6 +15,7 @@
 #include "usb_desc.h"
 #include "usb_pwr.h"
 #include "hw_config.h"
+#include "board.h"
 
 #define DEF_UARTx_BAUDRATE         115200                                       /* Default baud rate for serial port */
 #define DEF_UARTx_STOPBIT          0                                            /* Default stop bit for serial port */

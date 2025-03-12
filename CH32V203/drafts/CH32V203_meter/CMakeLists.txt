@@ -26,6 +26,7 @@ file(GLOB SOURCES
         "../lib/src/ch32v20x_rcc.c"
         "../lib/src/ch32v20x_gpio.c"
         "../lib/src/ch32v20x_exti.c"
+        "../lib/src/ch32v20x_tim.c"
         "../startup_ch32v20x_D6.S"
         "../lib/USBLIB/USB-Driver/src/usb_core.c"
         "../lib/USBLIB/USB-Driver/src/usb_init.c"
