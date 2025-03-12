@@ -88,18 +88,6 @@ static const ModulePredefinedInfo module_predefined_info[MAX_DEVICES] =
 
 static int led_state;
 
-static void GPIOInit(void)
-{
-  GPIO_InitTypeDef GPIO_InitStructure;
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-  led_state = 0;
-}
-
 void blink_led(void)
 {
   led_state = !led_state;
@@ -301,27 +289,115 @@ int i2c_transfer(struct _DeviceObject *o, const void *txdata, unsigned int txdat
                     txdata, txdatalength, rxdata, rxdatalength, I2C_TIMEOUT);
 }
 
+static void spi_rx(int module_id, unsigned char *rxdata, unsigned int num_bytes)
+{
+  const Pin *pin_ncs = &module_predefined_info[module_id].pins[PIN_NCS];
+  pin_ncs->port->BCR = pin_ncs->pin;
+  while (num_bytes--)
+    *rxdata++ = spi_byte(module_id, 0, 0);
+  pin_ncs->port->BSHR = pin_ncs->pin;
+}
+
+static void spi_tx(int module_id, unsigned char subdevice_id, const unsigned char *txdata, unsigned int num_bytes)
+{
+  const Pin *pin_ncs = &module_predefined_info[module_id].pins[PIN_NCS];
+  pin_ncs->port->BCR = pin_ncs->pin;
+  spi_byte(module_id, subdevice_id, 0);
+  while (num_bytes--)
+    spi_byte(module_id, *txdata++, 0);
+  pin_ncs->port->BSHR = pin_ncs->pin;
+}
+
 int spi_transfer(struct _DeviceObject *o, const void *txdata, unsigned int txdatalength, void *rxdata,
                                        unsigned int rxdatalength)
 {
-  //todo
+  int tx = txdatalength && txdata;
+  int rx = rxdatalength && rxdata;
+  if (tx || rx)
+  {
+    if (tx)
+      spi_tx(o->idx, o->subdevice, txdata, txdatalength);
+    if (tx && rx)
+      delay_us(10);
+    if (rx)
+      spi_rx(o->idx, rxdata, rxdatalength);
+  }
   return 0;
 }
 
 void init_spi(int module_id)
 {
-  //todo
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  const Pin *pin = &module_predefined_info[module_id].pins[PIN_MISO];
+  GPIO_InitStructure.GPIO_Pin = pin->pin;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(pin->port, &GPIO_InitStructure);
+  pin = &module_predefined_info[module_id].pins[PIN_MOSI];
+  GPIO_InitStructure.GPIO_Pin = pin->pin;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_Init(pin->port, &GPIO_InitStructure);
+  pin = &module_predefined_info[module_id].pins[PIN_SCK];
+  GPIO_InitStructure.GPIO_Pin = pin->pin;
+  GPIO_Init(pin->port, &GPIO_InitStructure);
+  SPI_CS_SET(module_id);
+  pin = &module_predefined_info[module_id].pins[PIN_NCS];
+  GPIO_InitStructure.GPIO_Pin = pin->pin;
+  GPIO_Init(pin->port, &GPIO_InitStructure);
 }
 
 void init_interrupt_pin(const struct _DeviceObject *o)
 {
-  //todo
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  const Pin *pin = &module_predefined_info[o->idx].pins[o->transfer == i2c_transfer ? 2 : 4];
+  GPIO_InitStructure.GPIO_Pin = pin->pin;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_Init(pin->port, &GPIO_InitStructure);
 }
 
 int get_interrupt_pin_level(const struct _DeviceObject *o)
 {
-  //todo
-  return 0;
+  const Pin *pin = &module_predefined_info[o->idx].pins[o->transfer == i2c_transfer ? 2 : 4];
+  return pin->port->INDR & pin->pin;
+}
+
+static void GPIOInit(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+  led_state = 0;
+
+  GPIO_InitStructure.GPIO_Pin = PIN_RESET;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_Init(PORT_RESET, &GPIO_InitStructure);
+}
+
+static void I2CInit(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+
+  for (int i = 0; i < MAX_DEVICES; i++)
+  {
+    i2c_soft_init(i);
+    const Pin *pin = &module_predefined_info[i].pins[PIN_SCL];
+    GPIO_InitStructure.GPIO_Pin = pin->pin;
+    GPIO_Init(pin->port, &GPIO_InitStructure);
+    pin = &module_predefined_info[i].pins[PIN_SDA];
+    GPIO_InitStructure.GPIO_Pin = pin->pin;
+    GPIO_Init(pin->port, &GPIO_InitStructure);
+  }
 }
 
 void configure_hal(void)
@@ -334,11 +410,11 @@ void configure_hal(void)
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
 
   GPIOInit();
+  I2CInit();
 
   Set_USBConfig();
   USB_Init();
   USB_Interrupts_Config();
 
   USB_Endp_Init();
-  //todo
 }
