@@ -20,6 +20,7 @@ project(usb_cdc C ASM)
 file(GLOB SOURCES
         "src/*.c"
         "../lib/debug.c"
+        "../lib/delay.c"
         "../lib/system_ch32v20x.c"
         "../lib/src/ch32v20x_misc.c"
         "../lib/src/ch32v20x_rcc.c"

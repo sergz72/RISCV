@@ -1,6 +1,7 @@
 #include "board.h"
 #include <ch32v20x_gpio.h>
 #include "debug.h"
+#include "delay.h"
 
 static void GPIOInit(void)
 {
@@ -15,7 +16,6 @@ static void GPIOInit(void)
 void HalInit(void)
 {
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-  SystemCoreClockUpdate();
   Delay_Init();
 
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);

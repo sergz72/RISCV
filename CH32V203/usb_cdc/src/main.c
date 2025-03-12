@@ -4,6 +4,7 @@
 #include "hw_config.h"
 #include "usb_init.h"
 #include "usb_pwr.h"
+#include "delay.h"
 
 static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
 
