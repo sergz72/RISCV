@@ -9,7 +9,11 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 SET(LINKER_SCRIPT ../../Link.ld)
 
-SET(COMMON_FLAGS "-march=rv32imac_zicsr -ffunction-sections -fdata-sections -specs=nosys.specs -specs=nano.specs -nostartfiles")
+if (MOUNRIVER)
+    SET(COMMON_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+else()
+    SET(COMMON_FLAGS " -march=rv32imac_zicsr -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
+endif()
 
 SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
 SET(CMAKE_ASM_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
@@ -18,7 +22,9 @@ SET(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,-gc-sections,--print-memory-usage -T ${LINK
 project(CH32V203_meter C ASM)
 
 file(GLOB SOURCES
-        "src/*.c"
+        "src/hal.c"
+        "src/main.c"
+        "src/internal_devices/dev_internal_pwm.c"
         "../lib/debug.c"
         "../lib/delay.c"
         "../lib/system_ch32v20x.c"
@@ -44,6 +50,7 @@ file(GLOB SOURCES
         ../../../ARM_CLION/meter_core/device_config.c
         ../../../ARM_CLION/meter_core/device_list.c
         ../../../ARM_CLION/meter_core/devices.c
+        ../../../ARM_CLION/meter_core/i2c_soft_hal.c
         ../../../ARM_CLION/meter_core/devices/dev_ads1115.c
         ../../../ARM_CLION/meter_core/devices/dev_dds.c
         ../../../ARM_CLION/meter_core/devices/dev_ina226.c
@@ -66,6 +73,7 @@ file(GLOB SOURCES
 
 include_directories(
         src
+        src/internal_devices
         ../lib
         ../lib/inc
         ../lib/USBLIB/USB-Driver/inc

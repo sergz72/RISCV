@@ -5,11 +5,22 @@
 #define NULL 0
 #endif
 
+#define PWM_CLOCK 48000000
+
 #define USB_CDC_RX_BUFFER_SIZE 1024
 
 #define MAX_DEVICES 5
 
-#define INTERNAL_DEVICES
+#define INTERNAL_DEVICES \
+,{\
+  .device_id = INTERNAL_PWM_DEVICE_ID,\
+  .public_id = PUBLIC_ID_PWM,\
+  .initializer = internal_pwm_initializer,\
+  .timer_event = NULL,\
+  .message_processor = pwm_message_processor,\
+  .save_config = internal_pwm_save_config,\
+  .is_allowed_for_module_id = PWMAllowed\
+}
 
 #define INTERNAL_DEVICES_COUNT 0
 
@@ -17,36 +28,36 @@
 #define SPI_SOFT_CLK_IDLE_LOW
 
 //module reset
-#define PIN_RESET GPIO_Pin_5
+#define PIN_RESET GPIO_Pin_7
 #define PORT_RESET GPIOA
 
 //module 1
 #define PIN_SDA1 GPIO_Pin_11
 #define PORT_PIN_SDA1 GPIOB
-#define PIN_SCL1 GPIO_Pin_10
+#define PIN_SCL1 GPIO_Pin_1
 #define PORT_PIN_SCL1 GPIOB
-#define PIN_1_0  GPIO_Pin_1
+#define PIN_1_0  GPIO_Pin_10
 #define PORT_PIN_1_0 GPIOB
 #define PIN_1_1  GPIO_Pin_0
 #define PORT_PIN_1_1 GPIOB
-#define PIN_1_2  GPIO_Pin_7
-#define PORT_PIN_1_2 GPIOA
-#define PIN_1_3  GPIO_Pin_6
-#define PORT_PIN_1_3 GPIOA
+#define PIN_1_2  -1
+#define PORT_PIN_1_2 NULL
+#define PIN_1_3  -1
+#define PORT_PIN_1_3 NULL
 
 //module 2
-#define PIN_SDA2 GPIO_Pin_3
+#define PIN_SDA2 GPIO_Pin_5
 #define PORT_PIN_SDA2 GPIOA
-#define PIN_SCL2 GPIO_Pin_2
+#define PIN_SCL2 GPIO_Pin_4
 #define PORT_PIN_SCL2 GPIOA
-#define PIN_2_0  GPIO_Pin_1
+#define PIN_2_0  GPIO_Pin_3
 #define PORT_PIN_2_0 GPIOA
-#define PIN_2_1  GPIO_Pin_0
+#define PIN_2_1  GPIO_Pin_2
 #define PORT_PIN_2_1 GPIOA
-#define PIN_2_2  -1
-#define PORT_PIN_2_2 NULL
-#define PIN_2_3  -1
-#define PORT_PIN_2_3 NULL
+#define PIN_2_2  GPIO_Pin_1
+#define PORT_PIN_2_2 GPIOA
+#define PIN_2_3  GPIO_Pin_0
+#define PORT_PIN_2_3 GPIOA
 
 //module 3
 #define PIN_SDA3 GPIO_Pin_8
@@ -63,14 +74,14 @@
 #define PORT_PIN_3_3 NULL
 
 // module 4
-#define PIN_SDA4 GPIO_Pin_4
-#define PORT_PIN_SDA4 GPIOB
-#define PIN_SCL4 GPIO_Pin_3
-#define PORT_PIN_SCL4 GPIOB
-#define PIN_4_0  GPIO_Pin_15
-#define PORT_PIN_4_0 GPIOA
-#define PIN_4_1  GPIO_Pin_10
-#define PORT_PIN_4_1 GPIOA
+#define PIN_SDA4 GPIO_Pin_15
+#define PORT_PIN_SDA4 GPIOA
+#define PIN_SCL4 GPIO_Pin_10
+#define PORT_PIN_SCL4 GPIOA
+#define PIN_4_0  GPIO_Pin_4
+#define PORT_PIN_4_0 GPIOB
+#define PIN_4_1  GPIO_Pin_5
+#define PORT_PIN_4_1 GPIOB
 #define PIN_4_2  -1
 #define PORT_PIN_4_2 NULL
 #define PIN_4_3  -1
@@ -100,6 +111,10 @@ void SPI_CS_CLR(int channel);
 void SPI_CLK_SET(int channel);
 void SPI_CLK_CLR(int channel);
 
+int pwm_enable(int module_id, int pin_id, int enable);
+int pwm_set_frequency_and_duty(int module_id, int pin_id, unsigned int frequency, unsigned int duty);
+
 #include <delay.h>
+#include "dev_internal_pwm.h"
 
 #endif
