@@ -281,7 +281,7 @@ static int ContinueTransfer(int endpoint)
   return 1;
 }
 
-static void DeviceRequestHandler(int endpoint, USBDeviceRequest *request)
+static void DeviceRequestHandler(USBDeviceRequest *request)
 {
   unsigned int length;
   switch ((USBRequestType)request->request)
@@ -289,40 +289,43 @@ static void DeviceRequestHandler(int endpoint, USBDeviceRequest *request)
     case usb_request_type_get_descriptor:
       void *descriptor = USBGetDescriptor(request->value >> 8, request->value & 0xFF, &length);
       if (descriptor)
-        StartTransfer(endpoint, descriptor, request->length > length ? length : request->length);
+        StartTransfer(0, descriptor, request->length > length ? length : request->length);
       else
-        USBStallEndpoint(endpoint);
+        USBStallEndpoint(0);
+      break;
+    case usb_request_type_set_address:
+      USBSetAddress(request->value);
       break;
     case usb_request_type_set_configuration:
       break;
     default:
-      USBStallEndpoint(endpoint);
-    break;
+      USBStallEndpoint(0);
+      break;
   }
 }
 
-void __attribute__((weak)) InterfaceRequestHandler(int endpoint, USBDeviceRequest *request)
+void __attribute__((weak)) InterfaceRequestHandler(USBDeviceRequest *request)
 {
-  USBStallEndpoint(endpoint);
+  USBStallEndpoint(0);
 }
 
-static void InSetupTransactionHandler(int endpoint)
+static void SetupTransactionHandler(void)
 {
-  USBDeviceRequest *request = (USBDeviceRequest *)USBGetEndpointInBuffer(endpoint);
+  USBDeviceRequest *request = (USBDeviceRequest *)USBGetEndpointInBuffer(0);
   switch (request->request_type & 0x1F)
   {
     case usb_request_recipient_device:
-      DeviceRequestHandler(endpoint, request);
+      DeviceRequestHandler(request);
       break;
     case usb_request_recipient_interface:
-      InterfaceRequestHandler(endpoint, request);
+      InterfaceRequestHandler(request);
       break;
     default:
-      USBStallEndpoint(endpoint);
+      USBStallEndpoint(0);
   }
 }
 
-void __attribute__((weak)) InTransactionHandler(int endpoint)
+void __attribute__((weak)) OutTransactionHandler(int endpoint)
 {
   USBStallEndpoint(endpoint);
 }
@@ -332,22 +335,19 @@ void USBDeviceInterruptHandler(void)
   int endpoint = USBReadInterruptEndpointNumber();
   if (endpoint >= 0)
   {
-    unsigned int in_transaction = USBIsTransactionDirectionIN(endpoint);
-    if (USBIsSetupTransaction(endpoint))
-    {
-      if (in_transaction)
-        InSetupTransactionHandler(endpoint);
-    }
+    if (USBIsSetupTransaction())
+      SetupTransactionHandler();
     else
     {
+      unsigned int in_transaction = USBIsTransactionDirectionIN(endpoint);
       if (in_transaction)
-      {
-        InTransactionHandler(endpoint);
-      }
-      else
       {
         if (!ContinueTransfer(endpoint))
           USBEnableEndpoint(endpoint);
+      }
+      else
+      {
+        OutTransactionHandler(endpoint);
       }
     }
   }

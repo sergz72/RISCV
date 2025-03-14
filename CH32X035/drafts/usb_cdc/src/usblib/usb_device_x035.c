@@ -59,35 +59,119 @@ void USBInit(void)
 
 int USBReadInterruptEndpointNumber(void)
 {
-  //todo
-  return -1;
+  if (!(USBFSD->INT_FG & USBFS_UIF_TRANSFER))
+    return -1;
+  return USBFSD->INT_ST & 0x0F;
 }
 
 int USBIsTransactionDirectionIN(int endpoint)
 {
-  //todo
-  return 0;
+  unsigned int uis_token = USBFSD->INT_ST & USBFS_UIS_TOKEN_MASK;
+  return uis_token == USBFS_UIS_TOKEN_IN;
 }
 
-int USBIsSetupTransaction(int endpoint)
+int USBIsSetupTransaction(void)
 {
-  //todo
-  return 0;
+  unsigned int uis_token = USBFSD->INT_ST & USBFS_UIS_TOKEN_MASK;
+  return uis_token == USBFS_UIS_TOKEN_SETUP;
+  //return USBFSD->INT_ST & 0x80;
 }
 
 void USBEnableEndpoint(unsigned int endpoint)
 {
-  //todo
+  switch (endpoint)
+  {
+    case 0:
+      USBFSD->UEP0_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 1:
+      USBFSD->UEP1_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 2:
+      USBFSD->UEP2_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 3:
+      USBFSD->UEP3_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 5:
+      USBFSD->UEP5_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 6:
+      USBFSD->UEP6_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    case 7:
+      USBFSD->UEP7_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
+      break;
+    default:
+      break;
+  }
 }
 
 void USBActivateEndpoint(unsigned int endpoint, unsigned int length)
 {
-  //todo
+  switch (endpoint)
+  {
+    case 0:
+      USBFSD->UEP0_TX_LEN = (unsigned short)length;
+      USBFSD->UEP0_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 1:
+      USBFSD->UEP1_TX_LEN = (unsigned short)length;
+      USBFSD->UEP1_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 2:
+      USBFSD->UEP2_TX_LEN = (unsigned short)length;
+      USBFSD->UEP2_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 3:
+      USBFSD->UEP3_TX_LEN = (unsigned short)length;
+      USBFSD->UEP3_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 5:
+      USBFSD->UEP5_TX_LEN = (unsigned short)length;
+      USBFSD->UEP5_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 6:
+      USBFSD->UEP6_TX_LEN = (unsigned short)length;
+      USBFSD->UEP6_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    case 7:
+      USBFSD->UEP7_TX_LEN = (unsigned short)length;
+      USBFSD->UEP7_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_ACK;
+      break;
+    default:
+      break;
+  }
 }
 
 void USBStallEndpoint(unsigned int endpoint)
 {
-  //todo
+  switch (endpoint)
+  {
+    case 0:
+      USBFSD->UEP0_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 1:
+      USBFSD->UEP1_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 2:
+      USBFSD->UEP2_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 3:
+      USBFSD->UEP3_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 5:
+      USBFSD->UEP5_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 6:
+      USBFSD->UEP6_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    case 7:
+      USBFSD->UEP7_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_STALL;
+      break;
+    default:
+      break;
+  }
 }
 
 void *USBGetEndpointInBuffer(int endpoint)
@@ -102,10 +186,38 @@ void *USBGetEndpointOutBuffer(int endpoint)
 
 void USBSetEndpointTransferType(int endpoint, USBEndpointTransferType transfer_type)
 {
-  //todo
+  USBEnableEndpoint(endpoint);
+  switch (endpoint)
+  {
+    case 1:
+      USBFSD->UEP4_1_MOD |= USBFS_UEP1_RX_EN|USBFS_UEP1_TX_EN;
+      break;
+    case 2:
+      USBFSD->UEP2_3_MOD |= USBFS_UEP2_RX_EN|USBFS_UEP2_TX_EN;
+      break;
+    case 3:
+      USBFSD->UEP2_3_MOD |= USBFS_UEP3_RX_EN|USBFS_UEP3_TX_EN;
+      break;
+    case 5:
+      USBFSD->UEP567_MOD |= USBFS_UEP5_RX_EN|USBFS_UEP5_TX_EN;
+      break;
+    case 6:
+      USBFSD->UEP567_MOD |= USBFS_UEP6_RX_EN|USBFS_UEP6_TX_EN;
+      break;
+    case 7:
+      USBFSD->UEP567_MOD |= USBFS_UEP7_RX_EN|USBFS_UEP5_TX_EN;
+      break;
+    default:
+      break;
+  }
 }
 
 void USBClearInterruptFlags(void)
 {
   USBFSD->INT_FG = 0xFF;
+}
+
+void USBSetAddress(unsigned short address)
+{
+  USBFSD->DEV_ADDR = (unsigned char)address;
 }

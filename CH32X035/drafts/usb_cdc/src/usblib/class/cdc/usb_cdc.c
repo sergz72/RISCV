@@ -141,14 +141,14 @@ static int cdc_descriptor_builder(void)
   return 0;
 }
 
-void InTransactionHandler(int endpoint)
+void OutTransactionHandler(int endpoint)
 {
   //todo
   USBStallEndpoint(endpoint);
 }
 
-void InterfaceRequestHandler(int endpoint, USBDeviceRequest *request)
+void InterfaceRequestHandler(USBDeviceRequest *request)
 {
   //todo
-  USBStallEndpoint(endpoint);
+  USBStallEndpoint(0);
 }

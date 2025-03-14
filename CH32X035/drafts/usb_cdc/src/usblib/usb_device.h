@@ -159,19 +159,20 @@ unsigned int AddInterfaceDescriptor(const USBInterfaceDescriptor *interface);
 int AddEndpointDescriptor(const USBEndpointDescriptor *endpoint);
 
 //weak functions
-void InTransactionHandler(int endpoint);
-void InterfaceRequestHandler(int endpoint, USBDeviceRequest *request);
+void OutTransactionHandler(int endpoint);
+void InterfaceRequestHandler(USBDeviceRequest *request);
 
 // hal functions
 void USBClearInterruptFlags(void);
 int USBReadInterruptEndpointNumber(void);
 int USBIsTransactionDirectionIN(int endpoint);
-int USBIsSetupTransaction(int endpoint);
+int USBIsSetupTransaction(void);
 void USBEnableEndpoint(unsigned int endpoint);
 void USBActivateEndpoint(unsigned int endpoint, unsigned int length);
 void USBStallEndpoint(unsigned int endpoint);
 void *USBGetEndpointInBuffer(int endpoint);
 void *USBGetEndpointOutBuffer(int endpoint);
 void USBSetEndpointTransferType(int endpoint, USBEndpointTransferType transfer_type);
+void USBSetAddress(unsigned short address);
 
 #endif
