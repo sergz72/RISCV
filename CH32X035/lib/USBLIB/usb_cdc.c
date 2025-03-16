@@ -51,17 +51,14 @@ void CDC_Transmit(unsigned char *buffer, unsigned int length)
 {
   while (length)
   {
+    while (CDC_Tx_InProgress)
+      __WFI();
     unsigned int l = length > DEF_USBD_FS_PACK_SIZE ? DEF_USBD_FS_PACK_SIZE : length;
     NVIC_DisableIRQ( USBFS_IRQn );
     CDC_Tx_InProgress = 1;
     USBFS_Endp_DataUp(DEF_UEP3, buffer, l, DEF_UEP_CPY_LOAD);
     NVIC_EnableIRQ( USBFS_IRQn );
     length -= l;
-    if (length)
-    {
-      buffer += l;
-      while (CDC_Tx_InProgress)
-        ;
-    }
+    buffer += l;
   }
 }

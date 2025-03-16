@@ -64,7 +64,11 @@ volatile int CDC_Tx_InProgress;
 
 /******************************************************************************/
 /* Interrupt Service Routine Declaration*/
-void USBFS_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+#if __GNUC__ > 13
+void __attribute__((naked)) USBFS_IRQHandler(void);
+#else
+void __attribute__((interrupt("WCH-Interrupt-fast"))) USBFS_IRQHandler(void);
+#endif
 
 
 /*********************************************************************
@@ -881,4 +885,7 @@ void USBFS_IRQHandler( void )
         USBFSD->INT_FG = intflag;
     }
 
+#if __GNUC__ > 13
+    asm volatile ("mret");
+#endif
 }
