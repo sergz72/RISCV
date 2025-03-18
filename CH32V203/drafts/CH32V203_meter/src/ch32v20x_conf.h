@@ -1,7 +1,7 @@
 #ifndef __CH32V20X_CONF_H
 #define __CH32V20X_CONF_H
 
-#define SYSCLK_FREQ_48MHz_HSE  48000000
+#define SYSCLK_FREQ_144MHz_HSE  144000000
 
 #include "ch32v20x_gpio.h"
 #include "ch32v20x_rcc.h"

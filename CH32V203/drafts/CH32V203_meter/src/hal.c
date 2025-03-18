@@ -82,10 +82,10 @@ static const ModulePredefinedInfo module_predefined_info[MAX_DEVICES] =
 static int led_state;
 static volatile unsigned int time_hi;
 
-void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_IRQHandler(void)
+void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM1_UP_IRQHandler(void)
 {
   time_hi++;
-  TIM2->INTFR = 0;
+  TIM1->INTFR = 0;
 }
 
 void blink_led(void)
@@ -176,7 +176,7 @@ void SPI_CLK_CLR(int channel)
   pin->port->BCR = pin->pin;
 }
 
-static void TIM2Init(void)
+static void TIM1Init(void)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
   TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
@@ -187,18 +187,80 @@ static void TIM2Init(void)
   TIM_TimeBaseInitStructure.TIM_Prescaler = SystemCoreClock/1000000-1;
   TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
   TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
+  TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 1;
+  TIM_TimeBaseInit(TIM1, &TIM_TimeBaseInitStructure);
 
-  TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+  TIM_ClearITPendingBit(TIM1, TIM_IT_Update);
 
-  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannel = TIM1_UP_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //low priority
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
 
-  TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-  TIM_Cmd(TIM2, ENABLE);
+  TIM_ITConfig(TIM1, TIM_IT_Update, ENABLE);
+  TIM_Cmd(TIM1, ENABLE);
+}
+
+static void TIM2Init(void)
+{
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
+
+  TIM_TimeBaseInitStructure.TIM_Period = 0xFFFF;
+  TIM_TimeBaseInitStructure.TIM_Prescaler = 0;
+  TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
+}
+
+static void TIM3Init(void)
+{
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
+  TIM_OCInitTypeDef TIM_OCInitStructure;
+
+  TIM_TimeBaseInitStructure.TIM_Period = 0xFFFF;
+  TIM_TimeBaseInitStructure.TIM_Prescaler = 0;
+  TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM3, &TIM_TimeBaseInitStructure);
+
+  TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+  TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
+  TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
+  TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Reset;
+  TIM_OC4Init(TIM3, &TIM_OCInitStructure);
+
+  TIM_OC4PreloadConfig( TIM3, TIM_OCPreload_Enable );
+  TIM_ARRPreloadConfig( TIM3, ENABLE );
+}
+
+static void TIM4Init(void)
+{
+  TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
+  TIM_OCInitTypeDef TIM_OCInitStructure;
+
+  TIM_TimeBaseInitStructure.TIM_Period = 0xFFFF;
+  TIM_TimeBaseInitStructure.TIM_Prescaler = 0;
+  TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM4, &TIM_TimeBaseInitStructure);
+
+  TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+  TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OCInitStructure.TIM_OCNPolarity = TIM_OCNPolarity_Low;
+  TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Reset;
+  TIM_OCInitStructure.TIM_OCNIdleState = TIM_OCIdleState_Reset;
+  TIM_OC1Init(TIM4, &TIM_OCInitStructure);
+
+  TIM_OC1PreloadConfig( TIM4, TIM_OCPreload_Enable );
+  TIM_ARRPreloadConfig( TIM4, ENABLE );
 }
 
 unsigned long long int time_us(void)
@@ -208,7 +270,7 @@ unsigned long long int time_us(void)
   do
   {
     time_high = time_hi;
-    time_low = TIM2->CNT;
+    time_low = TIM1->CNT;
   } while (time_high != time_hi);
   return ((unsigned long long int)time_high << 16) | time_low;
 }
@@ -310,13 +372,40 @@ int get_interrupt_pin_level(const struct _DeviceObject *o)
 
 int pwm_enable(int module_id, int pin_id, int enable)
 {
-  //todo
+  if (!enable)
+  {
+    switch (module_id)
+    {
+      case 0:
+        TIM3->CH4CVR = 0;
+        break;
+      case 2:
+        TIM4->CH1CVR = 0;
+        break;
+      default:
+        break;
+    }
+  }
   return 0;
 }
 
-int pwm_set_frequency_and_duty(int module_id, int pin_id, unsigned int frequency, unsigned int duty)
+int pwm_set_frequency_and_duty(int module_id, int pin_id, unsigned short prescaler, unsigned int frequency, unsigned int duty)
 {
-  //todo
+  switch (module_id)
+  {
+    case 0:
+      TIM3->PSC = (unsigned short)(prescaler - 1);
+      TIM3->ATRLR = (unsigned short)frequency;
+      TIM3->CH4CVR = (unsigned short)duty;
+      break;
+    case 2:
+      TIM4->PSC = (unsigned short)(prescaler - 1);
+      TIM4->ATRLR = (unsigned short)frequency;
+      TIM4->CH1CVR = (unsigned short)duty;
+      break;
+    default:
+      break;
+  }
   return 0;
 }
 
@@ -363,7 +452,8 @@ void configure_hal(void)
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
   Delay_Init();
 
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO | RCC_APB2Periph_TIM1, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4, ENABLE);
 
   GPIOInit();
   I2CInit();
@@ -374,5 +464,8 @@ void configure_hal(void)
 
   USB_Endp_Init();
 
-  TIM2Init();
+  TIM1Init();
+  TIM2Init(); // frequency counter
+  TIM3Init(); // pwm
+  TIM4Init(); // pwm
 }
