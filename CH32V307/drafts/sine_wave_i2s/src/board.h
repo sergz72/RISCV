@@ -1,0 +1,21 @@
+#ifndef _BOARD_H
+#define _BOARD_H
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define USB_CDC_RX_BUFFER_SIZE 256
+#define CDC_RX_BUF_LEN 1024
+
+#define MAX_SHELL_COMMANDS 30
+#define MAX_SHELL_COMMAND_PARAMETERS 10
+#define MAX_SHELL_COMMAND_PARAMETER_LENGTH 50
+#define SHELL_HISTORY_SIZE 20
+#define SHELL_HISTORY_ITEM_LENGTH 100
+
+#define PRINTF_BUFFER_LENGTH 100
+
+void HalInit(void);
+
+#endif
