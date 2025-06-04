@@ -2,6 +2,8 @@
 #include <ch32v30x.h>
 #include "delay.h"
 #include "sound.h"
+#include <tlv320dac3100.h>
+#include <i2c_func.h>
 
 static void GPIOInit(void)
 {
@@ -100,6 +102,45 @@ static void PLL3Init(unsigned int mul)
     ;
 }
 
+/*
+ * PB10 -> SCL
+ * PB11 -> SDA
+ */
+
+static void I2C2Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  I2C_InitTypeDef I2C_InitTSturcture;
+
+  RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C2, ENABLE );
+
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10 | GPIO_Pin_11;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init( GPIOB, &GPIO_InitStructure );
+
+  I2C_InitTSturcture.I2C_ClockSpeed = 100000;
+  I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
+  I2C_InitTSturcture.I2C_DutyCycle = I2C_DutyCycle_16_9;
+  I2C_InitTSturcture.I2C_OwnAddress1 = 0;
+  I2C_InitTSturcture.I2C_Ack = I2C_Ack_Enable;
+  I2C_InitTSturcture.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+  I2C_Init( I2C2, &I2C_InitTSturcture );
+
+  I2C_Cmd( I2C2, ENABLE );
+}
+
+static void TLVInit(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  // TLV reset pin
+  GPIO_InitStructure.GPIO_Pin = TLV_RESET_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIO_Init(TLV_RESET_PORT, &GPIO_InitStructure);
+}
+
 void HalInit(void)
 {
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
@@ -111,4 +152,19 @@ void HalInit(void)
   GPIOInit();
   I2S2Init();
   DMA_I2S2_Init();
+  I2C2Init();
+  TLVInit();
+}
+
+int tlv320dac3100_read(unsigned char register_number, unsigned char *value)
+{
+  return 1;
+}
+
+int tlv320dac3100_write(unsigned char register_number, unsigned char value)
+{
+  unsigned char data[2];
+  data[0] = register_number;
+  data[1] = value;
+  return i2c_write(I2C2, TLV320DAC3100_I2C_ADDRESS, data, 2, I2C_TIMEOUT);
 }

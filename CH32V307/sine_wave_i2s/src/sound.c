@@ -20,7 +20,7 @@ int sound_init(void)
 // SPI3 stream
 void __attribute__((interrupt("WCH-Interrupt-fast"))) DMA1_Channel5_IRQHandler(void)
 {
-  unsigned short *pbuffer = DMA1->INTFCR & DMA1_FLAG_HT5 ? (unsigned short*)sound_out_buffer : (unsigned short*)sound_out_buffer + SOUND_OUT_BUFFER_SIZE / 2;
+  unsigned short *pbuffer = DMA1->INTFR & DMA1_FLAG_HT5 ? (unsigned short*)sound_out_buffer : (unsigned short*)sound_out_buffer + SOUND_OUT_BUFFER_SIZE / 2;
 
   for (int i = 0; i < SOUND_OUT_BUFFER_SIZE / 4; i++)
   {

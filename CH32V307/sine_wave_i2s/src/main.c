@@ -7,11 +7,13 @@
 #include <shell.h>
 #include <getstring.h>
 #include "sound.h"
+#include "tlv.h"
 
 static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
 static char command_line[200];
 static unsigned int cdc_length;
 static unsigned char *cdc_buffer_p;
+static int led_state;
 
 void puts_(const char *s)
 {
@@ -49,14 +51,37 @@ static int getch_(void)
   return *cdc_buffer_p++;
 }
 
+static void LEDSToggle(void)
+{
+  led_state = !led_state;
+  if (led_state)
+  {
+    LED_GREEN_ON;
+    LED_RED_OFF;
+  }
+  else
+  {
+    LED_GREEN_OFF;
+    LED_RED_ON;
+  }
+}
+
 int main(void)
 {
-  int i = 0, n = 0;
+  int n = 0;
   int rc;
+
+  led_state = 0;
 
   HalInit();
 
   sound_init();
+  if (tlv_init())
+  {
+    LED_RED_ON;
+    while(1)
+      Delay_Ms(100);
+  }
 
   USBFS_RCC_Init();
   USBFS_Device_Init(ENABLE);
@@ -71,7 +96,7 @@ int main(void)
   {
     Delay_Ms(10);
     if ((n & 63) == 0)
-      GPIO_WriteBit(GPIOB, GPIO_Pin_4, (i == 0) ? (i = Bit_SET) : (i = Bit_RESET));
+      LEDSToggle();
     n++;
     cdc_length = CDC_Receive(usb_cdc_buffer, sizeof(usb_cdc_buffer));
     cdc_buffer_p = usb_cdc_buffer;

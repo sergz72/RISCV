@@ -27,6 +27,7 @@ file(GLOB SOURCES
         "src/*.c"
         "../lib/delay.c"
         "../lib/system_ch32v30x.c"
+        "../lib/i2c_func.c"
         "../lib/src/ch32v30x_misc.c"
         "../lib/src/ch32v30x_rcc.c"
         "../lib/src/ch32v30x_gpio.c"
@@ -42,6 +43,7 @@ file(GLOB SOURCES
         "../../../ARM_CLION/common_lib/fixed_queue.c"
         "../../../ARM_CLION/common_lib/audio/generator.c"
         "../../../ARM_CLION/common_lib/audio/sine_table_16.c"
+        "../../../ARM_CLION/common_lib/audio/tlv320dac3100.c"
 )
 
 include_directories(

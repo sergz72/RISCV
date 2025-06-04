@@ -1,0 +1,44 @@
+#ifndef _BOARD_H
+#define _BOARD_H
+
+#include <ch32v30x.h>
+#include <delay.h>
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define USB_CDC_RX_BUFFER_SIZE 256
+#define CDC_RX_BUF_LEN 1024
+
+#define MAX_SHELL_COMMANDS 30
+#define MAX_SHELL_COMMAND_PARAMETERS 10
+#define MAX_SHELL_COMMAND_PARAMETER_LENGTH 50
+#define SHELL_HISTORY_SIZE 20
+#define SHELL_HISTORY_ITEM_LENGTH 100
+
+#define PRINTF_BUFFER_LENGTH 100
+
+#define LED_GREEN_PORT GPIOB
+#define LED_GREEN_PIN GPIO_Pin_4
+#define LED_RED_PORT GPIOA
+#define LED_RED_PIN GPIO_Pin_15
+
+#define TLV_RESET_PORT GPIOB
+#define TLV_RESET_PIN GPIO_Pin_14
+
+#define LED_GREEN_ON GPIO_WriteBit(LED_GREEN_PORT, LED_GREEN_PIN, 1)
+#define LED_GREEN_OFF GPIO_WriteBit(LED_GREEN_PORT, LED_GREEN_PIN, 0)
+
+#define LED_RED_ON GPIO_WriteBit(LED_RED_PORT, LED_RED_PIN, 1)
+#define LED_RED_OFF GPIO_WriteBit(LED_RED_PORT, LED_RED_PIN, 0)
+
+#define TLV_RESET_RELEASE GPIO_WriteBit(TLV_RESET_PORT, TLV_RESET_PIN, 1)
+
+#define delayms(n) Delay_Ms(n)
+
+#define I2C_TIMEOUT 1000000
+
+void HalInit(void);
+
+#endif
