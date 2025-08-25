@@ -19,7 +19,7 @@ SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
 SET(CMAKE_ASM_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
 SET(CMAKE_EXE_LINKER_FLAGS_INIT "-Wl,-gc-sections,--print-memory-usage -T ${LINKER_SCRIPT}")
 
-project(usb_cdc C ASM)
+project(usb_cdc_fs C ASM)
 
 add_definitions(-DCH32V30x_D8C)
 
@@ -33,23 +33,14 @@ file(GLOB SOURCES
         "../lib/src/ch32v30x_gpio.c"
         "../lib/src/ch32v30x_exti.c"
         "../startup_ch32v30x_D8C.S"
-        "../lib/USBLIB/ch32v30x_usbfs_device.c"
-        "../lib/USBLIB/usb_desc.c"
-        "../lib/USBLIB/usb_cdc.c"
+        "../lib/USBLIBFS/cdc/ch32v30x_usbfs_device.c"
+        "../lib/USBLIBFS/cdc/usb_desc.c"
+        "../lib/USBLIBFS/cdc/usb_cdc.c"
 )
 
-include_directories(src ../lib ../lib/inc ../lib/USBLIB)
+include_directories(src ../lib ../lib/inc ../lib/USBLIBFS/cdc)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
 set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
-
-set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
-set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
-
-add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${HEX_FILE}
-        COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
-        COMMENT "Building ${HEX_FILE}
-Building ${BIN_FILE}")

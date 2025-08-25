@@ -35,9 +35,9 @@ file(GLOB SOURCES
         "../lib/src/ch32v30x_i2c.c"
         "../lib/src/ch32v30x_spi.c"
         "../startup_ch32v30x_D8C.S"
-        "../lib/USBLIB/cdc/ch32v30x_usbfs_device.c"
-        "../lib/USBLIB/cdc/usb_desc.c"
-        "../lib/USBLIB/cdc/usb_cdc.c"
+        "../lib/USBLIBFS/cdc/ch32v30x_usbfs_device.c"
+        "../lib/USBLIBFS/cdc/usb_desc.c"
+        "../lib/USBLIBFS/cdc/usb_cdc.c"
         "../../../ARM_CLION/common_lib/shell/shell.c"
         "../../../ARM_CLION/common_lib/getstring.c"
         "../../../ARM_CLION/common_lib/fixed_queue.c"
@@ -50,7 +50,7 @@ include_directories(
         src
         ../lib
         ../lib/inc
-        ../lib/USBLIB/cdc
+        ../lib/USBLIBFS/cdc
         ../../../ARM_CLION/common_lib
         ../../../ARM_CLION/common_lib/shell
         ../../../ARM_CLION/common_lib/audio
