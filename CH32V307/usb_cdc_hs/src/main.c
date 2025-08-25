@@ -5,6 +5,8 @@
 
 static int led_state;
 
+static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
+
 static void LEDSToggle(void)
 {
   led_state = !led_state;
@@ -22,8 +24,6 @@ static void LEDSToggle(void)
 
 int main(void)
 {
-  unsigned char *buffer;
-
   led_state = 0;
 
   HalInit();
@@ -35,12 +35,11 @@ int main(void)
 
   while (1)
   {
-    CDC_ReceiveEnable();
-    unsigned int length = CDC_Receive(&buffer);
+    unsigned int length = CDC_Receive(usb_cdc_buffer, sizeof(usb_cdc_buffer));
     if (length)
     {
       LEDSToggle();
-      CDC_Transmit(buffer, length);
+      CDC_Transmit(usb_cdc_buffer, length);
     }
   }
 }

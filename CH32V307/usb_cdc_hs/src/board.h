@@ -19,6 +19,9 @@
 #define LED_RED_ON GPIO_WriteBit(LED_RED_PORT, LED_RED_PIN, 1)
 #define LED_RED_OFF GPIO_WriteBit(LED_RED_PORT, LED_RED_PIN, 0)
 
+#define CDC_RX_BUF_LEN 8192
+#define USB_CDC_RX_BUFFER_SIZE 512
+
 void HalInit(void);
 
 #endif

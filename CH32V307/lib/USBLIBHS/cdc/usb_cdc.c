@@ -2,36 +2,59 @@
 #include "usb_cdc.h"
 #include "ch32v30x_usbhs_device.h"
 
-static volatile unsigned int receive_size;
+static unsigned char cdc_rx_buffer[CDC_RX_BUF_LEN];
+static unsigned char *cdc_rx_buffer_write_p, *cdc_rx_buffer_read_p;
 
 void CDC_Init(void)
 {
-  receive_size = 0;
+  cdc_rx_buffer_write_p = cdc_rx_buffer_read_p = cdc_rx_buffer;
 }
 
 void CDC_Rx(unsigned int size)
 {
-  receive_size = size;
+  unsigned char *endp = cdc_rx_buffer_write_p + size;
+  unsigned int l = endp - cdc_rx_buffer > CDC_RX_BUF_LEN ? &cdc_rx_buffer[CDC_RX_BUF_LEN] - cdc_rx_buffer_write_p : size;
+  unsigned char *p = USBHS_EP2_Rx_Buf;
+  memcpy(cdc_rx_buffer_write_p, p, l);
+  size -= l;
+  if (size)
+  {
+    p += l;
+    cdc_rx_buffer_write_p = cdc_rx_buffer;
+    memcpy(cdc_rx_buffer_write_p, p, size);
+    cdc_rx_buffer_write_p += size;
+  }
+  else
+  {
+    cdc_rx_buffer_write_p += l;
+    if (cdc_rx_buffer_write_p >= &cdc_rx_buffer[CDC_RX_BUF_LEN])
+      cdc_rx_buffer_write_p = cdc_rx_buffer;
+  }
 }
 
-unsigned int CDC_Receive(unsigned char **buffer)
+unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size)
 {
-  *buffer = USBHS_EP2_Rx_Buf;
-  return receive_size;
-}
-
-void CDC_ReceiveEnable(void)
-{
-  USBHSD->UEP2_RX_CTRL = (USBHSD->UEP2_RX_CTRL & 0xFC) | USBHS_UEP_R_RES_ACK;
+  unsigned int l = 0;
+  while (buffer_size && cdc_rx_buffer_read_p != cdc_rx_buffer_write_p)
+  {
+    *buffer++ = *cdc_rx_buffer_read_p++;
+    if (cdc_rx_buffer_read_p >= &cdc_rx_buffer[CDC_RX_BUF_LEN])
+      cdc_rx_buffer_read_p = cdc_rx_buffer;
+    buffer_size--;
+    l++;
+  }
+  return l;
 }
 
 void CDC_Transmit(unsigned char *buffer, unsigned int length)
 {
-  while (length)
+  int send_zero = 0;
+
+  while (length != 0 || send_zero)
   {
     while (CDC_Tx_InProgress)
-      __WFI();
-    unsigned int l = length > DEF_USBD_FS_PACK_SIZE ? DEF_USBD_FS_PACK_SIZE : length;
+      ;
+    unsigned int l = length > DEF_USBD_HS_PACK_SIZE ? DEF_USBD_HS_PACK_SIZE : length;
     NVIC_DisableIRQ( USBHS_IRQn );
     CDC_Tx_InProgress = 1;
     memcpy(USBHS_EP2_Tx_Buf, buffer, l);
@@ -41,5 +64,6 @@ void CDC_Transmit(unsigned char *buffer, unsigned int length)
     NVIC_EnableIRQ( USBHS_IRQn );
     length -= l;
     buffer += l;
+    send_zero = l == DEF_USBD_HS_PACK_SIZE;
   }
 }

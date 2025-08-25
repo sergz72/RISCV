@@ -170,7 +170,7 @@ void USBHS_Device_Endp_Init ( void )
 
     USBHSD->UEP2_TX_LEN  = 0;
     USBHSD->UEP2_TX_CTRL = USBHS_UEP_T_RES_NAK;
-    USBHSD->UEP2_RX_CTRL = USBHS_UEP_R_RES_NAK;
+    USBHSD->UEP2_RX_CTRL = USBHS_UEP_R_RES_ACK;
 
     USBHSD->UEP3_TX_LEN  = 0;
     USBHSD->UEP3_TX_CTRL = USBHS_UEP_T_RES_NAK;
@@ -439,8 +439,7 @@ void USBHS_IRQHandler( void )
                     /* end-point 2 data out interrupt */
                     case USBHS_UIS_TOKEN_OUT | DEF_UEP2:
                         /* Endp download */
-                        USBHSD->UEP2_RX_CTRL = ((USBHSD->UEP2_RX_CTRL ^ USBHS_UEP_R_TOG_DATA1) & 0xFC) | USBHS_UEP_R_RES_NAK;
-                        CDC_Rx(USBFSD->RX_LEN);
+                        CDC_Rx(USBHSD->RX_LEN);
                         break;
 
                     default:
