@@ -46,7 +46,7 @@ unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size)
   return l;
 }
 
-void CDC_Transmit(unsigned char *buffer, unsigned int length)
+void CDC_Transmit(const unsigned char *buffer, unsigned int length)
 {
   int send_zero = 0;
 
