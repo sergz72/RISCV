@@ -27,6 +27,7 @@ file(GLOB SOURCES
         "src/main.c"
         "src/hal.c"
         "src/i2c_commands.c"
+        "src/spi_commands.c"
         "../lib/delay.c"
         "../lib/i2c_func.c"
         "../lib/system_ch32v30x.c"
@@ -40,13 +41,14 @@ file(GLOB SOURCES
         "../lib/USBLIBHS/cdc/usb_desc.c"
         "../lib/USBLIBHS/cdc/usb_cdc.c"
         "../../../ARM_CLION/common_lib/shell/shell.c"
+        "../../../ARM_CLION/common_lib/memory/spi_memory.c"
         "../../../ARM_CLION/common_lib/getstring.c"
         "../../../ARM_CLION/common_lib/fixed_queue.c"
         "../../../ARM_CLION/common_lib/crypto/chacha.c"
 )
 
 include_directories(src ../lib ../lib/inc ../lib/USBLIBHS/cdc ../../../ARM_CLION/common_lib
-        ../../../ARM_CLION/common_lib/shell ../../../ARM_CLION/common_lib/crypto)
+        ../../../ARM_CLION/common_lib/shell ../../../ARM_CLION/common_lib/crypto ../../../ARM_CLION/common_lib/memory)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

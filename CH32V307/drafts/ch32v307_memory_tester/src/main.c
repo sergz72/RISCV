@@ -1,13 +1,14 @@
 #include "board.h"
 #include "debug.h"
 #include "ch32v30x_usbhs_device.h"
-#include "delay.h"
 #include <usb_cdc.h>
 #include <stdarg.h>
 #include <shell.h>
 #include <getstring.h>
 #include <ch32v30x_gpio.h>
 #include "i2c_commands.h"
+#include "spi_commands.h"
+#include <spi_memory.h>
 
 static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
 static char command_line[200];
@@ -80,8 +81,11 @@ int main(void)
 
   shell_init(usb_printf, NULL);
   register_i2c_commands();
+  register_spi_commands();
 
   getstring_init(command_line, sizeof(command_line), getch_, puts_);
+
+  spi_memory_init();
 
   while (1)
   {

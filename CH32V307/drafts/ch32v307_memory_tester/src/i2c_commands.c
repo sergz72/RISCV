@@ -55,8 +55,8 @@ static const ShellCommand read_command = {
   NULL
 };
 
-static unsigned char buffer[512];
-static ChaCha rng;
+unsigned char memory_buffer[MEMORY_BUFFER_SIZE];
+ChaCha rng;
 
 static I2C_TypeDef *get_instance(char *arg)
 {
@@ -80,7 +80,7 @@ static int scan_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   {
     if (i % 16 == 0)
       pfunc("\n%.2x:", i);
-    int rc = i2c_check(instance, i << 1, I2C_TIMEOUT);
+    int rc = i2c_check(instance, i << 1, I2C_TIMEOUT_SCAN);
     if (rc == 0)
       pfunc(" %.2x", i);
     else
@@ -119,12 +119,12 @@ static int read_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
     return 300;
   unsigned long int memory_address = strtoul(argv[3], NULL, 16);
   int length = atoi(argv[4]);
-  if (length <= 0 || length > sizeof(buffer))
+  if (length <= 0 || length > sizeof(memory_buffer))
     return 400;
-  int rc = i2c_memory_read(instance, i2c_address << 1, memory_address, memory_address_length, buffer, length, I2C_TIMEOUT);
+  int rc = i2c_memory_read(instance, i2c_address << 1, memory_address, memory_address_length, memory_buffer, length, I2C_TIMEOUT);
   if (rc)
     return rc;
-  print_hex_buffer(buffer, length, pfunc);
+  print_hex_buffer(memory_buffer, length, pfunc);
   return 0;
 }
 
@@ -144,17 +144,17 @@ static int write_random_handler(printf_func pfunc, gets_func gfunc, int argc, ch
   if (page_length <= 0)
     return 400;
   int length = atoi(argv[5]);
-  if (length <= 0 || length > sizeof(buffer))
+  if (length <= 0 || length > sizeof(memory_buffer))
     return 500;
 
   chacha20_zero(&rng, 0);
 
   for (int i = 0; i < length; i++)
-    buffer[i] = chacha_u8(&rng);
+    memory_buffer[i] = chacha_u8(&rng);
 
-  print_hex_buffer(buffer, length, pfunc);
+  print_hex_buffer(memory_buffer, length, pfunc);
   return i2c_memory_write_pages(instance, i2c_address << 1, memory_address, memory_address_length,
-                          page_length, buffer, length, I2C_TIMEOUT);
+                          page_length, memory_buffer, length, I2C_TIMEOUT);
 }
 
 void register_i2c_commands(void)

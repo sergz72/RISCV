@@ -23,7 +23,8 @@
 #define USB_CDC_RX_BUFFER_SIZE 512
 #define PRINTF_BUFFER_LENGTH 100
 
-#define I2C_TIMEOUT 100
+#define I2C_TIMEOUT_SCAN 100
+#define I2C_TIMEOUT      100000
 
 #define MAX_SHELL_COMMANDS 50
 #define MAX_SHELL_COMMAND_PARAMETERS 10
@@ -43,7 +44,7 @@
 #define QSPI_CS_SET  GPIO_WriteBit(QSPI_PORT, QSPI_CS_PIN, 1)
 
 #define SPI1_PORT     GPIOA
-#define SPI1_CS_PIN  GPIO_Pin_2
+#define SPI1_CS_PIN   GPIO_Pin_2
 #define SPI1_MOSI_PIN GPIO_Pin_7
 #define SPI1_MISO_PIN GPIO_Pin_6
 #define SPI1_SCK_PIN  GPIO_Pin_5
@@ -68,6 +69,14 @@
 
 #define SPI3_CS_SET GPIO_WriteBit(SPI3_CS_PORT, SPI3_CS_PIN, 1)
 #define SPI3_CS_CLR GPIO_WriteBit(SPI3_CS_PORT, SPI3_CS_PIN, 0)
+
+#define SPI_MEMORY_MAX_CHANNELS 4
+
+#define MEMORY_BUFFER_SIZE 1024
+
+#include <delay.h>
+
+#define delayms(ms) Delay_Ms(ms)
 
 void HalInit(void);
 

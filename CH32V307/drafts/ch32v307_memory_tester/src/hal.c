@@ -1,7 +1,7 @@
 #include "board.h"
 #include <ch32v30x.h>
 #include "debug.h"
-#include "delay.h"
+#include <spi_memory.h>
 
 static void GPIOInit(void)
 {
@@ -70,10 +70,15 @@ static void SPI1Init(void)
   GPIO_InitTypeDef GPIO_InitStructure;
   SPI_InitTypeDef SPI_InitStructure;
 
-  RCC_APB1PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 
-  GPIO_InitStructure.GPIO_Pin = SPI1_MOSI_PIN | SPI1_MISO_PIN | SPI1_SCK_PIN;
+  GPIO_InitStructure.GPIO_Pin = SPI1_MOSI_PIN | SPI1_SCK_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init( SPI1_PORT, &GPIO_InitStructure );
+
+  GPIO_InitStructure.GPIO_Pin = SPI1_MISO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init( SPI1_PORT, &GPIO_InitStructure );
 
@@ -84,11 +89,11 @@ static void SPI1Init(void)
 
   SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-  SPI_InitStructure.SPI_DataSize = SPI_DataSize_16b;
+  SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
   SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
   SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
   SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
+  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
   SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
   SPI_InitStructure.SPI_CRCPolynomial = 7;
   SPI_Init( SPI1, &SPI_InitStructure );
@@ -103,8 +108,13 @@ static void SPI3Init(void)
 
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
 
-  GPIO_InitStructure.GPIO_Pin = SPI3_MOSI_PIN | SPI3_MISO_PIN | SPI3_SCK_PIN;
+  GPIO_InitStructure.GPIO_Pin = SPI3_MOSI_PIN | SPI3_SCK_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init( SPI3_PORT, &GPIO_InitStructure );
+
+  GPIO_InitStructure.GPIO_Pin = SPI3_MISO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init( SPI3_PORT, &GPIO_InitStructure );
 
@@ -115,11 +125,11 @@ static void SPI3Init(void)
 
   SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
   SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-  SPI_InitStructure.SPI_DataSize = SPI_DataSize_16b;
+  SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
   SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
   SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
   SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
+  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
   SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
   SPI_InitStructure.SPI_CRCPolynomial = 7;
   SPI_Init( SPI3, &SPI_InitStructure );
@@ -161,4 +171,163 @@ void HalInit(void)
   SPI1Init();
   SPI3Init();
   QSPIInit();
+}
+
+void spi_finish(int channel)
+{
+  switch (channel)
+  {
+  case 1:
+    SPI1_CS_SET;
+    break;
+  case 2:
+    //SPI2_CS_SET;
+    //break;
+    break;
+  case 3:
+    SPI3_CS_SET;
+    break;
+  default: break;
+  }
+}
+
+static unsigned char spi_send_receive(SPI_TypeDef *instance, unsigned char data)
+{
+  while( SPI_I2S_GetFlagStatus( instance, SPI_I2S_FLAG_TXE ) == RESET )
+    ;
+  SPI_I2S_SendData(instance, data);
+  while(SPI_I2S_GetFlagStatus( instance, SPI_I2S_FLAG_RXNE ) == RESET )
+    ;
+  return SPI_I2S_ReceiveData(instance);
+}
+
+static void qspi_spi_trfr(int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
+{
+  while (nwrite--)
+  {
+    unsigned char data = *wdata++;
+    for (int i = 0; i < 8; i++)
+    {
+      unsigned char bit = data & 0x80 ? 1 : 0;
+      QSPI_PORT->OUTDR = bit;
+      data <<= 1;
+      QSPI_PORT->OUTDR = bit | 0x10; // set clk
+    }
+  }
+  while (nop_cycles--)
+  {
+    QSPI_PORT->OUTDR = 0;
+    QSPI_PORT->OUTDR = 0x10; // set clk
+  }
+  if (nread)
+  {
+    while (nread--)
+    {
+      unsigned char data = 0;
+      for (int i = 0; i < 8; i++)
+      {
+        data <<= 1;
+        QSPI_PORT->OUTDR = 0;
+        QSPI_PORT->OUTDR = 0x10; // set clk
+        data |= QSPI_PORT->INDR & 1;
+      }
+      *rdata++ = data;
+    }
+  }
+  if (set_cs)
+    QSPI_PORT->OUTDR = 0x20; //set cs
+}
+
+void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
+{
+  SPI_TypeDef *instance;
+  switch (channel)
+  {
+    case 0:
+      qspi_spi_trfr(nwrite, wdata, nop_cycles, nread, rdata, set_cs);
+      return;
+    case 1:
+      SPI1_CS_CLR;
+      instance = SPI1;
+      break;
+    case 2:
+      //SPI2_CS_CLR;
+      //instance = SPI2;
+      //break;
+      return;
+    case 3:
+      SPI3_CS_CLR;
+      instance = SPI3;
+      break;
+    default: return;
+  }
+
+  while (nwrite--)
+    spi_send_receive(instance, *wdata++);
+  nop_cycles >>= 3;
+  while (nop_cycles--)
+    spi_send_receive(instance, 0);
+  if (nread)
+  {
+    while (nread--)
+      *rdata++ = spi_send_receive(instance, 0);
+  }
+
+  if (set_cs)
+    spi_finish(channel);
+}
+
+void qspi_set_sio_direction(int out0, int out1, int out2, int out3)
+{
+  switch (out0 + out1)
+  {
+    case 0:
+      QSPI_PORT->CFGLR = 0x88338888; // all in
+      break;
+    case 1:
+      QSPI_PORT->CFGLR = 0x88338883; // out0
+      break;
+    default:
+      QSPI_PORT->CFGLR = 0x88333333; // all out
+      break;
+  }
+}
+
+void qspi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
+{
+  if (channel != 0)
+    return;
+  qspi_set_sio_direction(1, 1, 1, 1);
+  while (nwrite--)
+  {
+    unsigned char data = *wdata;
+    unsigned char d1 = data >> 4;
+    QSPI_PORT->OUTDR = d1;
+    QSPI_PORT->OUTDR = d1 | 0x10; // set clk
+    data &= 0x0F;
+    QSPI_PORT->OUTDR = data;
+    wdata++;
+    QSPI_PORT->OUTDR = data | 0x10; // set clk
+  }
+  if (set_cs)
+    qspi_set_sio_direction(0, 0, 0, 0);
+  while (nop_cycles--)
+  {
+    QSPI_PORT->OUTDR = 0;
+    QSPI_PORT->OUTDR = 0x10; // set clk
+  }
+  if (nread)
+  {
+    while (nread--)
+    {
+      QSPI_PORT->OUTDR = 0;
+      QSPI_PORT->OUTDR = 0x10; // set clk
+      unsigned char data = (QSPI_PORT->INDR & 0x0F) << 4;
+      QSPI_PORT->OUTDR = 0;
+      QSPI_PORT->OUTDR = 0x10; // set clk
+      *rdata++ = data | (QSPI_PORT->INDR & 0x0F);
+    }
+  }
+  if (set_cs)
+    QSPI_PORT->OUTDR = 0x20; //set cs
 }

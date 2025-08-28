@@ -163,17 +163,26 @@ int i2c_memory_write_pages(I2C_TypeDef *instance, unsigned char i2c_address, uns
                       unsigned int memory_address_length, unsigned int page_size,
                       const unsigned char *data, unsigned int length, unsigned int timeout)
 {
-  unsigned int delay = (page_size / 16) * 3;
+  int first = 1;
   while (length)
   {
     unsigned int l = length > page_size ? page_size : length;
-    int rc = i2c_memory_write_page(instance, i2c_address, memory_address, memory_address_length, data, l, timeout);
+    int rc;
+    for (int i = 0; i < 10; i++)
+    {
+      rc = i2c_memory_write_page(instance, i2c_address, memory_address, memory_address_length, data, l, timeout);
+      if (rc && first)
+        return rc;
+      first = 0;
+      if (!rc)
+        break;
+      Delay_Ms(1);
+    }
     if (rc)
       return rc;
     length -= l;
     data += l;
     memory_address += l;
-    Delay_Ms(delay);
   }
   return 0;
 }
