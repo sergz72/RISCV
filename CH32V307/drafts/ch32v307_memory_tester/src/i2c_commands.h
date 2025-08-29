@@ -9,5 +9,6 @@ void print_hex_buffer(unsigned char *buffer, int length, printf_func pfunc);
 
 extern unsigned char memory_buffer[MEMORY_BUFFER_SIZE];
 extern ChaCha rng;
+extern unsigned int iv[3];
 
 #endif

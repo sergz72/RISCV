@@ -5,6 +5,9 @@
 #define NULL 0
 #endif
 
+#include <delay.h>
+#include <ch32v30x_gpio.h>
+
 #define LED_BLUE_PORT GPIOB
 #define LED_BLUE_PIN GPIO_Pin_4
 #define LED_RED_PORT GPIOA
@@ -23,8 +26,7 @@
 #define USB_CDC_RX_BUFFER_SIZE 512
 #define PRINTF_BUFFER_LENGTH 100
 
-#define I2C_TIMEOUT_SCAN 100
-#define I2C_TIMEOUT      100000
+#define I2C_TIMEOUT 200
 
 #define MAX_SHELL_COMMANDS 50
 #define MAX_SHELL_COMMAND_PARAMETERS 10
@@ -74,10 +76,19 @@
 
 #define MEMORY_BUFFER_SIZE 1024
 
-#include <delay.h>
+#define _93CXX_DI_LOW(channel)   GPIO_WriteBit(SPI3_PORT, SPI3_MOSI_PIN, 0)
+#define _93CXX_DI_HIGH(channel)  GPIO_WriteBit(SPI3_PORT, SPI3_MOSI_PIN, 1)
+#define _93CXX_CLK_LOW(channel)  GPIO_WriteBit(SPI3_PORT, SPI3_SCK_PIN, 0)
+#define _93CXX_CLK_HIGH(channel) GPIO_WriteBit(SPI3_PORT, SPI3_SCK_PIN, 1)
+#define _93CXX_CS_LOW(channel)   GPIO_WriteBit(SPI3_CS_PORT, SPI3_CS_PIN, 0)
+#define _93CXX_CS_HIGH(channel)  GPIO_WriteBit(SPI3_CS_PORT, SPI3_CS_PIN, 1)
+#define _93CXX_DO(channel)       GPIO_ReadInputDataBit(SPI3_PORT, SPI3_MISO_PIN)
+#define _93CXX_DELAY             Delay_Us(1)
+#define _93XX_TIMEOUT            10000
 
 #define delayms(ms) Delay_Ms(ms)
 
 void HalInit(void);
+void enter_93xx_mode(void);
 
 #endif

@@ -44,7 +44,6 @@ static const spi_memory flash = {
 };
 
 static const spi_memory *device = &flash;
-static unsigned int iv[3] =  {0, 0, 0};
 
 static int read_id_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
 static const ShellCommandItem read_id_command_items[] = {

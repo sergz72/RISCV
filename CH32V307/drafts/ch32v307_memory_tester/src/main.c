@@ -8,6 +8,7 @@
 #include <ch32v30x_gpio.h>
 #include "i2c_commands.h"
 #include "spi_commands.h"
+#include "93xx_commands.h"
 #include <spi_memory.h>
 
 static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
@@ -82,6 +83,7 @@ int main(void)
   shell_init(usb_printf, NULL);
   register_i2c_commands();
   register_spi_commands();
+  register_93xx_commands();
 
   getstring_init(command_line, sizeof(command_line), getch_, puts_);
 

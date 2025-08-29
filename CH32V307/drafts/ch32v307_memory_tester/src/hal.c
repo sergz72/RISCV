@@ -25,11 +25,11 @@ static void I2C1Init(void)
 
   RCC_APB1PeriphClockCmd( RCC_APB1Periph_I2C1, ENABLE );
 
-  AFIO->PCFR1 |= AFIO_PCFR1_I2C1_REMAP;
+  GPIO_PinRemapConfig(GPIO_Remap_I2C1, ENABLE);
   GPIO_InitStructure.GPIO_Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init( I2C2_PORT, &GPIO_InitStructure );
+  GPIO_Init( I2C1_PORT, &GPIO_InitStructure );
 
   I2C_InitTSturcture.I2C_ClockSpeed = 400000;
   I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
@@ -330,4 +330,17 @@ void qspi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycl
   }
   if (set_cs)
     QSPI_PORT->OUTDR = 0x20; //set cs
+}
+
+void enter_93xx_mode(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, DISABLE);
+
+  _93CXX_CS_LOW(0);
+  GPIO_InitStructure.GPIO_Pin = SPI3_MOSI_PIN | SPI3_SCK_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init( SPI3_PORT, &GPIO_InitStructure );
 }

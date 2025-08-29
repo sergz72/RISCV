@@ -57,6 +57,7 @@ static const ShellCommand read_command = {
 
 unsigned char memory_buffer[MEMORY_BUFFER_SIZE];
 ChaCha rng;
+unsigned int iv[3] =  {0, 0, 0};
 
 static I2C_TypeDef *get_instance(char *arg)
 {
@@ -80,7 +81,7 @@ static int scan_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   {
     if (i % 16 == 0)
       pfunc("\n%.2x:", i);
-    int rc = i2c_check(instance, i << 1, I2C_TIMEOUT_SCAN);
+    int rc = i2c_check(instance, i << 1, I2C_TIMEOUT);
     if (rc == 0)
       pfunc(" %.2x", i);
     else
@@ -147,7 +148,8 @@ static int write_random_handler(printf_func pfunc, gets_func gfunc, int argc, ch
   if (length <= 0 || length > sizeof(memory_buffer))
     return 500;
 
-  chacha20_zero(&rng, 0);
+  iv[0]++;
+  chacha20_zero(&rng, (const uint32_t*)iv);
 
   for (int i = 0; i < length; i++)
     memory_buffer[i] = chacha_u8(&rng);
