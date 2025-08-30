@@ -177,6 +177,9 @@ void spi_finish(int channel)
 {
   switch (channel)
   {
+  case 0:
+    QSPI_CS_SET;
+    break;
   case 1:
     SPI1_CS_SET;
     break;
@@ -208,16 +211,18 @@ static void qspi_spi_trfr(int nwrite, const unsigned char *wdata, int nop_cycles
     unsigned char data = *wdata++;
     for (int i = 0; i < 8; i++)
     {
-      unsigned char bit = data & 0x80 ? 1 : 0;
+      unsigned int bit = data & 0x80 ? QSPI_D0_MOSI_PIN : 0;
       QSPI_PORT->OUTDR = bit;
       data <<= 1;
-      QSPI_PORT->OUTDR = bit | 0x10; // set clk
+      QSPI_PORT->OUTDR = bit | QSPI_SCK_PIN; // set clk
     }
   }
   while (nop_cycles--)
   {
     QSPI_PORT->OUTDR = 0;
-    QSPI_PORT->OUTDR = 0x10; // set clk
+    asm volatile("nop");
+    QSPI_PORT->OUTDR = QSPI_SCK_PIN; // set clk
+    asm volatile("nop");
   }
   if (nread)
   {
@@ -226,16 +231,16 @@ static void qspi_spi_trfr(int nwrite, const unsigned char *wdata, int nop_cycles
       unsigned char data = 0;
       for (int i = 0; i < 8; i++)
       {
-        data <<= 1;
         QSPI_PORT->OUTDR = 0;
-        QSPI_PORT->OUTDR = 0x10; // set clk
-        data |= QSPI_PORT->INDR & 1;
+        data <<= 1;
+        QSPI_PORT->OUTDR = QSPI_SCK_PIN; // set clk
+        if (QSPI_PORT->INDR & QSPI_D1_MISO_PIN)
+          data |= 1;
       }
       *rdata++ = data;
     }
   }
-  if (set_cs)
-    QSPI_PORT->OUTDR = 0x20; //set cs
+  QSPI_PORT->OUTDR = set_cs ? QSPI_CS_PIN : 0; //set cs
 }
 
 void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
@@ -282,13 +287,13 @@ void qspi_set_sio_direction(int out0, int out1, int out2, int out3)
   switch (out0 + out1)
   {
     case 0:
-      QSPI_PORT->CFGLR = 0x88338888; // all in
+      QSPI_PORT->CFGHR = 0x33888888; // all in
       break;
     case 1:
-      QSPI_PORT->CFGLR = 0x88338883; // out0
+      QSPI_PORT->CFGHR = 0x33888388; // out0
       break;
     default:
-      QSPI_PORT->CFGLR = 0x88333333; // all out
+      QSPI_PORT->CFGHR = 0x33333388; // all out
       break;
   }
 }
@@ -297,39 +302,36 @@ void qspi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycl
 {
   if (channel != 0)
     return;
-  qspi_set_sio_direction(1, 1, 1, 1);
   while (nwrite--)
   {
-    unsigned char data = *wdata;
-    unsigned char d1 = data >> 4;
-    QSPI_PORT->OUTDR = d1;
-    QSPI_PORT->OUTDR = d1 | 0x10; // set clk
-    data &= 0x0F;
+    unsigned int data = ((unsigned int)*wdata) << 6;
+    QSPI_PORT->OUTDR = data;
+    QSPI_PORT->OUTDR = data | QSPI_SCK_PIN; // set clk
+    data = (data << 4) & 0x3C00;
     QSPI_PORT->OUTDR = data;
     wdata++;
-    QSPI_PORT->OUTDR = data | 0x10; // set clk
+    QSPI_PORT->OUTDR = data | QSPI_SCK_PIN; // set clk
   }
-  if (set_cs)
+  if (nread)
     qspi_set_sio_direction(0, 0, 0, 0);
   while (nop_cycles--)
   {
     QSPI_PORT->OUTDR = 0;
-    QSPI_PORT->OUTDR = 0x10; // set clk
+    QSPI_PORT->OUTDR = QSPI_SCK_PIN; // set clk
+  }
+  for (int i = 0; i < nread; i++)
+  {
+    QSPI_PORT->OUTDR = 0;
+    QSPI_PORT->OUTDR = QSPI_SCK_PIN; // set clk
+    unsigned char data = (QSPI_PORT->INDR & 0x3C00) >> 6;
+    QSPI_PORT->OUTDR = 0;
+    QSPI_PORT->OUTDR = QSPI_SCK_PIN; // set clk
+    *rdata++ = data | ((QSPI_PORT->INDR & 0x3C00) >> 10);
   }
   if (nread)
-  {
-    while (nread--)
-    {
-      QSPI_PORT->OUTDR = 0;
-      QSPI_PORT->OUTDR = 0x10; // set clk
-      unsigned char data = (QSPI_PORT->INDR & 0x0F) << 4;
-      QSPI_PORT->OUTDR = 0;
-      QSPI_PORT->OUTDR = 0x10; // set clk
-      *rdata++ = data | (QSPI_PORT->INDR & 0x0F);
-    }
-  }
+    qspi_set_sio_direction(1, 1, 1, 1);
   if (set_cs)
-    QSPI_PORT->OUTDR = 0x20; //set cs
+    QSPI_PORT->OUTDR = QSPI_CS_PIN; //set cs
 }
 
 void enter_93xx_mode(void)

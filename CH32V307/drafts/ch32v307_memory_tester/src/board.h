@@ -35,12 +35,12 @@
 #define SHELL_HISTORY_ITEM_LENGTH 100
 
 #define QSPI_PORT        GPIOE
-#define QSPI_D0_MOSI_PIN GPIO_Pin_0
-#define QSPI_D1_MISO_PIN GPIO_Pin_1
-#define QSPI_D2_PIN      GPIO_Pin_2
-#define QSPI_D3_PIN      GPIO_Pin_3
-#define QSPI_SCK_PIN     GPIO_Pin_4
-#define QSPI_CS_PIN      GPIO_Pin_5
+#define QSPI_D0_MOSI_PIN GPIO_Pin_10
+#define QSPI_D1_MISO_PIN GPIO_Pin_11
+#define QSPI_D2_PIN      GPIO_Pin_12
+#define QSPI_D3_PIN      GPIO_Pin_13
+#define QSPI_CS_PIN      GPIO_Pin_14
+#define QSPI_SCK_PIN     GPIO_Pin_15
 
 #define QSPI_SCK_CLR GPIO_WriteBit(QSPI_PORT, QSPI_SCK_PIN, 0)
 #define QSPI_CS_SET  GPIO_WriteBit(QSPI_PORT, QSPI_CS_PIN, 1)

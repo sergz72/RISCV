@@ -13,7 +13,7 @@ typedef struct
   int address_length;
   int max_data_length;
   void (*reset)(int channel);
-  int (*enter_qspi_mode)(int channel);
+  int (*enter_qspi_mode)(int channel, int check_sr2);
   int (*exit_qspi_mode)(int channel);
   int (*read_id)(int channel, unsigned int *id);
   int (*wren)(int channel);
@@ -144,12 +144,13 @@ static const ShellCommand erase_command = {
 static int enter_qspi_mode_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
 static const ShellCommandItem enter_qspi_mode_command_items[] = {
   {NULL, param_handler, NULL},
+  {NULL, param_handler, NULL},
   {NULL, NULL, enter_qspi_mode_handler}
 };
 static const ShellCommand enter_qspi_mode_command = {
   enter_qspi_mode_command_items,
   "spi_mem_enter_qspi_mode",
-  "spi_mem_enter_qspi_mode channel"
+  "spi_mem_enter_qspi_mode channel check_sr2"
 };
 
 static int exit_qspi_mode_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
@@ -357,7 +358,8 @@ static int enter_qspi_mode_handler(printf_func pfunc, gets_func gfunc, int argc,
   int channel = atoi(argv[0]);
   if (channel != 0)
     return 2;
-  return device->enter_qspi_mode(channel);
+  int check_sr2 = atoi(argv[1]);
+  return device->enter_qspi_mode(channel, check_sr2);
 }
 
 static int exit_qspi_mode_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
