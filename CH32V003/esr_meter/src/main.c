@@ -80,14 +80,16 @@ int main(void)
   {
     led_toggle();
     Delay_Ms(250);
-    int vt = adc_get(&dcfg1); // transformer out
-    int vr = adc_get(&dcfg2); // transformer out + rc
+    int vt = adc_get(&dcfg2); // transformer out
+    int vr = adc_get(&dcfg1); // transformer out + rc
     int value;
     if (vr >= vt)
       value = 0;
     else
       value = calculate_value(vt, vr);
     if (BUTTON_PRESSED && vr > 0)
+      r0 = value;
+    if (value < r0)
       r0 = value;
     show_result(value - r0);
   }

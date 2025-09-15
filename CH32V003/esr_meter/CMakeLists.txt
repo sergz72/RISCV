@@ -34,14 +34,14 @@ file(GLOB SOURCES
         "../startup_ch32v00x.S"
         "../../../ARM_CLION/common_lib/myprintf.c"
         "../../../ARM_CLION/common_lib/ultoa.c"
-        "../../../ARM_CLION/common_lib/sensor/mcp3426.c"
+        "../../../ARM_CLION/common_lib/adc/mcp3426.c"
         "../../../ARM_CLION/common_lib/display/lcd.c"
         "../../../ARM_CLION/common_lib/display/lcd_ssd1306.c"
         "../../../ARM_CLION/common_lib/display/font.c"
         "../../../ARM_CLION/common_lib/display/fonts/font18.c"
 )
 
-include_directories(src ../lib ../lib/inc ../../../ARM_CLION/common_lib ../../../ARM_CLION/common_lib/sensor ../../../ARM_CLION/common_lib/display)
+include_directories(src ../lib ../lib/inc ../../../ARM_CLION/common_lib ../../../ARM_CLION/common_lib/adc ../../../ARM_CLION/common_lib/display)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
