@@ -12,7 +12,7 @@ static unsigned int p_ms;
  */
 void Delay_Init(void)
 {
-    p_us = SystemCoreClock / 8000000;
+    p_us = SystemCoreClock / 1000000;
     p_ms = p_us * 1000;
 }
 
@@ -34,7 +34,7 @@ void Delay_Us(unsigned int n)
 
     SysTick->CMP = i;
     SysTick->CNT = 0;
-    SysTick->CTLR |=(1 << 0);
+    SysTick->CTLR |=(5 << 0);
 
     while((SysTick->SR & (1 << 0)) != (1 << 0));
     SysTick->CTLR &= ~(1 << 0);
@@ -58,7 +58,7 @@ void Delay_Ms(unsigned int n)
 
     SysTick->CMP = i;
     SysTick->CNT = 0;
-    SysTick->CTLR |=(1 << 0);
+    SysTick->CTLR |=(5 << 0);
 
     while((SysTick->SR & (1 << 0)) != (1 << 0));
     SysTick->CTLR &= ~(1 << 0);
