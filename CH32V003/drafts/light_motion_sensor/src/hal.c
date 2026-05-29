@@ -1,6 +1,5 @@
 #include "board.h"
 #include <string.h>
-#include <veml7700.h>
 
 USART_InitTypeDef USART_InitStructure = {
   .USART_BaudRate = USART_BAUDRATE,
@@ -190,16 +189,7 @@ static void opa_init(void)
   OPA_InitStructure.NSEL = CHN0;
   OPA_InitStructure.PSEL = CHP0;
   OPA_Init(&OPA_InitStructure);
-}
-
-void enable_opa(void)
-{
   OPA_Cmd(ENABLE);
-}
-
-void disable_opa(void)
-{
-  OPA_Cmd(DISABLE);
 }
 
 static void adc_init(void)
@@ -236,7 +226,7 @@ static void adc_init(void)
   disable_adc();
 }
 
-unsigned int adc_get(void)
+unsigned short adc_get(void)
 {
   ADC_ClearFlag(ADC1, ADC_FLAG_JEOC);
   ADC_SoftwareStartInjectedConvCmd(ADC1, ENABLE);
@@ -245,7 +235,7 @@ unsigned int adc_get(void)
   return ADC_GetInjectedConversionValue(ADC1, ADC_InjectedChannel_1);
 }
 
-unsigned int measure_vref(void)
+unsigned short get_vbat(void)
 {
   //VREF is on ADC channel 8
   ADC_InjectedChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_15Cycles);
@@ -346,10 +336,9 @@ void SysInit(void)
 #ifdef USART_ENABLED
   usart_init();
 #endif
-  TIM_Cmd( TIM_TIMER, ENABLE );
 }
 
-static int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout)
+int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout)
 {
   unsigned int t;
 
@@ -395,7 +384,7 @@ static int i2c_read(unsigned char address, unsigned char *data, unsigned int l, 
   return 0;
 }
 
-static int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout, bool stop)
+int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout, bool stop)
 {
   unsigned int t;
 
@@ -467,6 +456,7 @@ void puts_(const char *s)
 
 void pwm_set_duty(unsigned int duty)
 {
+  TIM_SetCompare2(PWM_TIM, duty);
 }
 #endif
 
@@ -474,16 +464,16 @@ void delayms(int ms)
 {
 }
 
-int veml7700_read(unsigned char reg, unsigned short *data)
+void pwm_on(unsigned short duty)
 {
-  int rc = i2c_write(VEML7700_I2C_ADDRESS << 1, &reg, 1, I2C_TIMEOUT, false);
-  if (rc)
-    return rc;
-  return i2c_read(VEML7700_I2C_ADDRESS << 1, (unsigned char*)data, 2, I2C_TIMEOUT);
+  RCC_ADCCLKConfig(RCC_PCLK2_Div16);
+  set_high_system_clock();
+  enable_pwm(duty);
 }
 
-int veml7700_write(unsigned char reg, unsigned short value)
+void pwm_off(void)
 {
-  unsigned char data[3] = {reg, (unsigned char)value, (unsigned char)(value >> 8)};
-  return i2c_write(VEML7700_I2C_ADDRESS << 1, data, 3, I2C_TIMEOUT, true);
+  disable_pwm();
+  set_low_system_clock();
+  RCC_ADCCLKConfig(RCC_PCLK2_Div2);
 }

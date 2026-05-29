@@ -38,8 +38,8 @@
  */
 #define LED_BATTERY_PIN GPIO_Pin_6
 #define LED_BATTERY_PORT GPIOC
-#define LED_BATTERY_OFF GPIOC->BCR = LED_MOTION_PIN
-#define LED_BATTERY_ON GPIOC->BSHR = LED_MOTION_PIN
+#define LED_BATTERY_OFF GPIOC->BCR = LED_BATTERY_PIN
+#define LED_BATTERY_ON GPIOC->BSHR = LED_BATTERY_PIN
 
 #define TIMER_EVENT_FREQUENCY 256
 
@@ -57,8 +57,6 @@
 #define OPA_OUT_PORT GPIOD
 #define OPA_OUT_PIN  GPIO_Pin_4
 
-#define BATTERY_ALERT_VALUE 600
-
 #define USART_TX_PIN      GPIO_Pin_5
 #define USART_RX_PIN      GPIO_Pin_6
 #define USART_PORT        GPIOD
@@ -68,8 +66,6 @@
 #define COMMMAND_LINE_SIZE 50
 #define PRINTF_BUFFER_LENGTH 100
 #define USE_MYVSPRINTF
-
-#define USART_ENABLED
 
 #define TIMER_INTERRUPT_PRIORITY 0
 #define USART_INTERRUPT_PRIORITY 1
@@ -83,6 +79,17 @@
 #define PIR_SENSOR_FILTER_THRESHOLD               9
 #define PIR_SENSOR_AVERAGING_FILTER_SAMPLES_COUNT TIMER_EVENT_FREQUENCY
 
+#define LIGHT_SENSOR_HIGH_THRESHOLD 300
+#define LIGHT_SENSOR_LOW_THRESHOLD  100
+
+#define VBAT_3V0 410 // 3000 mv
+#define VBAT_2V9 424 // 2900 mv
+#define VBAT_BELOW_3V0(v) (v > VBAT_3V0)
+#define VBAT_BELOW_2V9(v) (v > VBAT_2V9)
+#define VBAT_TO_DUTY(v) (497-v/14)
+
+#define USART_ENABLED
+
 void SysInit(void);
 void disable_i2c(void);
 void enable_i2c(void);
@@ -90,19 +97,25 @@ void enable_pwm(uint16_t pulse);
 void disable_pwm(void);
 void disable_adc(void);
 void enable_adc(void);
-unsigned int adc_get(void);
-unsigned int measure_vref(void);
-void disable_opa(void);
-void enable_opa(void);
+unsigned short adc_get(void);
 void set_low_system_clock(void);
 void set_high_system_clock(void);
 void usart_transmit(char c);
 void pwm_set_duty(unsigned int duty);
 void delayms(int ms);
+int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout, bool stop);
+int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout);
+int light_sensor_init(void);
+int light_sensor_read(unsigned short *result);
+unsigned short get_vbat(void);
+void pwm_on(unsigned short duty);
+void pwm_off(void);
 
 extern volatile bool timer_interrupt;
 extern volatile char command_line[COMMMAND_LINE_SIZE];
 extern volatile char *command_line_p, *command_line_echo_p;
 extern volatile bool command_ready;
+
+#include "light_sensor_veml7700.h"
 
 #endif

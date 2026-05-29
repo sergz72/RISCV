@@ -2,7 +2,7 @@
 #include "usart_handler.h"
 #include <string.h>
 #include <common_printf.h>
-#include "light_sensor.h"
+#include "light_sensor_veml7700.h"
 
 #ifdef USART_ENABLED
 static bool led_timer_state;
@@ -28,7 +28,7 @@ static void run_command(void)
   if (!strcmp((const char*)command_line, "adc"))
   {
     unsigned int opa_value = adc_get();
-    unsigned int vref_value = measure_vref();
+    unsigned int vref_value = get_vbat();
     common_printf("adc result=%d vref=%d\r\n", opa_value, vref_value);
   }
   else if (!strcmp((const char*)command_line, "veml_init"))

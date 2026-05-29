@@ -1,17 +1,6 @@
 #include "board.h"
-#include <pir_sensor.h>
 #include "usart_handler.h"
-
-static volatile int motion_timer;
-static volatile bool motion_detected;
-static bool motion_sensor_active;
-static unsigned int light_sensor_disable_time;
-static unsigned int motion_sensor_disable_time;
-
-void pir_motion_detected(void)
-{
-  motion_detected = true;
-}
+#include "sensor_handler.h"
 
 int main(void)
 {
@@ -21,12 +10,17 @@ int main(void)
 
   SysInit();
 
-  //set_high_system_clock();
+  int rc = light_sensor_init();
+  if (rc)
+  {
+    LED_BATTERY_ON;
+    while (1)
+      ;
+  }
 
-  enable_opa();
-  enable_adc();
-  enable_i2c();
-  //enable_pwm(10);
+  sensor_handler_init();
+
+  TIM_Cmd( TIM_TIMER, ENABLE );
 
   while (1)
   {
@@ -38,6 +32,8 @@ int main(void)
 #ifdef USART_ENABLED
       usart_handler();
 #endif
+      if (sensor_handler())
+        TIM_Cmd( TIM_TIMER, DISABLE );
     }
   }
 }
