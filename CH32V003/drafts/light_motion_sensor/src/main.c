@@ -18,9 +18,14 @@ int main(void)
       ;
   }
 
+#ifdef SENSOR_ENABLED
   sensor_handler_init();
+#endif
 
   TIM_Cmd( TIM_TIMER, ENABLE );
+#ifndef USART_ENABLED
+  iwdg_init();
+#endif
 
   while (1)
   {
@@ -28,12 +33,14 @@ int main(void)
     if (timer_interrupt)
     {
       timer_interrupt = false;
-      //pir_sensor_adc_handler(adc_get());
 #ifdef USART_ENABLED
       usart_handler();
+#else
+      IWDG_ReloadCounter();
 #endif
-      if (sensor_handler())
-        TIM_Cmd( TIM_TIMER, DISABLE );
+#ifdef SENSOR_ENABLED
+      sensor_handler();
+#endif
     }
   }
 }

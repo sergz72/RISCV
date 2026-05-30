@@ -51,7 +51,7 @@ static void ports_init(void)
   GPIO_InitStructure.GPIO_Pin = LED_BATTERY_PIN;
   GPIO_Init(LED_BATTERY_PORT, &GPIO_InitStructure);
 #ifdef USART_ENABLED
-  GPIO_InitStructure.GPIO_Pin = LED_TIMER_PIN | LED_BATTERY_PIN;
+  GPIO_InitStructure.GPIO_Pin = LED_TIMER_PIN;
   GPIO_Init(LED_TIMER_PORT, &GPIO_InitStructure);
 #endif
 }
@@ -80,10 +80,11 @@ static void i2c_master_init(void)
   I2C_InitTSturcture.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
   I2C_Init( I2C_INST, &I2C_InitTSturcture );
 
-  RCC_APB1PeriphClockCmd( I2C_CLOCK, DISABLE );
+  //RCC_APB1PeriphClockCmd( I2C_CLOCK, DISABLE );
+  I2C_Cmd( I2C_INST, ENABLE );
 }
 
-void disable_i2c(void)
+/*void disable_i2c(void)
 {
   I2C_Cmd( I2C_INST, DISABLE );
   RCC_APB1PeriphClockCmd( I2C_CLOCK, DISABLE );
@@ -93,7 +94,7 @@ void enable_i2c(void)
 {
   RCC_APB1PeriphClockCmd( I2C_CLOCK, ENABLE );
   I2C_Cmd( I2C_INST, ENABLE );
-}
+}*/
 
 static void pwm_init(void)
 {
@@ -195,6 +196,12 @@ static void opa_init(void)
 static void adc_init(void)
 {
   ADC_InitTypeDef  ADC_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure;
+
+  GPIO_InitStructure.GPIO_Pin = VBAT_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
+  GPIO_Init(VBAT_PORT, &GPIO_InitStructure);
 
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
   RCC_ADCCLKConfig(RCC_PCLK2_Div2);
@@ -237,8 +244,8 @@ unsigned short adc_get(void)
 
 unsigned short get_vbat(void)
 {
-  //VREF is on ADC channel 8
-  ADC_InjectedChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_15Cycles);
+  //VBAT is on ADC channel 2
+  ADC_InjectedChannelConfig(ADC1, VBAT_CHANNEL, 1, ADC_SampleTime_15Cycles);
   unsigned int value = adc_get();
   //OPA output is on PD4 (ADC channel 7)
   ADC_InjectedChannelConfig(ADC1, ADC_Channel_7, 1, ADC_SampleTime_15Cycles);
@@ -310,6 +317,17 @@ void set_high_system_clock(void)
   USART_Init(USART1, &USART_InitStructure);
 #endif
 }
+
+#ifndef USART_ENABLED
+void iwdg_init(void)
+{
+  IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+  IWDG_SetPrescaler(IWDG_PRESCALER);
+  IWDG_SetReload(IWDG_RELOAD);
+  IWDG_ReloadCounter();
+  IWDG_Enable();
+}
+#endif
 
 /*
  * I2C1 -> APB1
@@ -454,9 +472,12 @@ void puts_(const char *s)
     usart_transmit(*s++);
 }
 
-void pwm_set_duty(unsigned int duty)
+unsigned short pwm_set_duty(unsigned short duty)
 {
+  if (duty >= PWM_PERIOD)
+    duty = PWM_PERIOD - 1;
   TIM_SetCompare2(PWM_TIM, duty);
+  return duty;
 }
 #endif
 
@@ -476,4 +497,11 @@ void pwm_off(void)
   disable_pwm();
   set_low_system_clock();
   RCC_ADCCLKConfig(RCC_PCLK2_Div2);
+}
+
+void pwm_auto(unsigned int vbat)
+{
+  if (VBAT_BELOW_3V0(vbat))
+    vbat = VBAT_3V0;
+  pwm_on(VBAT_TO_DUTY(vbat));
 }

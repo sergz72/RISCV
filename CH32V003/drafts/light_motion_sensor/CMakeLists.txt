@@ -36,6 +36,7 @@ file(GLOB SOURCES
         "../lib/src/ch32v00x_adc.c"
         "../lib/src/ch32v00x_opa.c"
         "../lib/src/ch32v00x_usart.c"
+        "../lib/src/ch32v00x_iwdg.c"
         "../startup_ch32v00x.S"
         "../../../ARM_CLION/common_lib/common_printf.c"
         "../../../ARM_CLION/common_lib/myprintf.c"

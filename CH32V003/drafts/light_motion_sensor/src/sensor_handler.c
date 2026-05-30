@@ -38,7 +38,7 @@ int sensor_handler(void)
     if (!motion_timer)
     {
       pwm_off();
-      light_sensor_disable_time = 5;
+      light_sensor_disable_time = TIMER_EVENT_FREQUENCY / 2;
     }
   }
   else if (light_sensor_disable_time)
@@ -53,7 +53,7 @@ int sensor_handler(void)
       {
         motion_sensor_active = true;
         enable_adc();
-        motion_sensor_disable_time = 20;
+        motion_sensor_disable_time = TIMER_EVENT_FREQUENCY * 2;
       }
     }
     else if (result > LIGHT_SENSOR_HIGH_THRESHOLD_RAW)
@@ -76,7 +76,7 @@ int sensor_handler(void)
   {
     motion_detected = false;
     if (motion_timer)
-      motion_timer = MOTION_DETECTOR_ON_TIME;
+      motion_timer = MOTION_DETECTOR_ON_TIME * TIMER_EVENT_FREQUENCY;
     else
     {
       unsigned int vbat = get_vbat();
@@ -91,10 +91,8 @@ int sensor_handler(void)
       }
       else
       {
-        motion_timer = MOTION_DETECTOR_ON_TIME;
-        if (VBAT_BELOW_3V0(vbat))
-          vbat = VBAT_3V0;
-        pwm_on(VBAT_TO_DUTY(vbat));
+        motion_timer = MOTION_DETECTOR_ON_TIME * TIMER_EVENT_FREQUENCY;
+        pwm_auto(vbat);
       }
     }
   }

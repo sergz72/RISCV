@@ -11,5 +11,6 @@
 #include "ch32v00x_adc.h"
 #include "ch32v00x_opa.h"
 #include "ch32v00x_usart.h"
+#include "ch32v00x_iwdg.h"
 
 #endif
