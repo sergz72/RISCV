@@ -9,32 +9,7 @@ static void ports_init(void)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 
-#ifdef LED_DEBUG
-  RCC->APB2PCENR |= RCC_IOPAEN | RCC_IOPCEN | RCC_IOPDEN;
-
-//  LED2_ON;
-  GPIO_InitStructure.GPIO_Pin = LED2_PIN;
-  GPIO_Init(LED2_PORT, &GPIO_InitStructure);
-
-//  LED3_ON;
-  GPIO_InitStructure.GPIO_Pin = LED3_PIN;
-  GPIO_Init(LED3_PORT, &GPIO_InitStructure);
-
-//  LED4_ON;
-  GPIO_InitStructure.GPIO_Pin = LED4_PIN;
-  GPIO_Init(LED4_PORT, &GPIO_InitStructure);
-
-//  LED5_ON;
-  GPIO_InitStructure.GPIO_Pin = LED5_PIN;
-  GPIO_Init(LED5_PORT, &GPIO_InitStructure);
-
-//  LED6_ON;
-  GPIO_InitStructure.GPIO_Pin = LED6_PIN;
-  GPIO_Init(LED6_PORT, &GPIO_InitStructure);
-
-#else
-  RCC->APB2PCENR |= RCC_IOPAEN | RCC_IOPCEN;
-#endif
+  RCC->APB2PCENR |= RCC_IOPCEN;
 
   POWER_ON;
   GPIO_InitStructure.GPIO_Pin = POWER_ON_PIN;
