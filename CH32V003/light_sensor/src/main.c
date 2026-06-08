@@ -2,6 +2,7 @@
 #include <delay.h>
 #include <fonts/font18.h>
 #include <veml7700.h>
+#include <tsl2591.h>
 
 //                         CH32V003
 //                     -------------------
@@ -24,43 +25,82 @@
 //                     |                 |
 //                     -------------------
 
+#ifdef SENSOR_TSL2591
+static const tsl2591_config config = {
+  .integration_time_ms = 600,
+  .als_interrupt_enable = 0,
+  .als_thresholds = {0,0},
+  .no_persist_interrupt_enable = 1,
+  .no_persist_als_thresholds = {1, 65535},
+  .persistence_filter = AnyOutOfRange,
+  .sleep_after_interrupt = 0
+};
+#endif
+
 int main(void)
 {
   SysInit();
 
+#ifdef SENSOR_VEML7700
   if (veml7700_init())
   {
     POWER_OFF;
     while (1)
       __WFI();
   }
+#endif
+
+#ifdef SENSOR_TSL2591
+  if (tsl2591_init(&config))
+  {
+    POWER_OFF;
+    while (1)
+      __WFI();
+  }
+#endif
 
   LcdInit();
   LcdScreenFill(BLACK_COLOR);
 
   while (1)
   {
-    veml7700_result result;
+    float lux;
+    int rc;
 
-    int rc = veml7700_measure(&result, 1);
+#ifdef SENSOR_VEML7700
+    veml7700_result veml_result;
+    rc = veml7700_measure(&veml_result, 1);
+    lux = veml_result.lux;
+#endif
+#ifdef SENSOR_TSL2591
+    tsl2591_result tsl_result;
+    delayms(2000);
+    rc = tsl2591_measure(&tsl_result);
+    lux = tsl_result.lux;
+#endif
     if (rc)
       LcdDrawText(0, 4, "Error", &courierNew18ptFontInfo, WHITE_COLOR, BLACK_COLOR, NULL);
     else
     {
-      if (result.lux >= 1000)
+      if (lux >= 1000)
       {
-        int luminocity = (int)(result.lux * 100);
+        int luminocity = (int)(lux * 100);
         LcdPrintf("%d.%02d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 100, luminocity % 100);
       }
-      else if (result.lux >= 100)
+      else if (lux >= 100)
       {
-        int luminocity = (int)(result.lux * 1000);
+        int luminocity = (int)(lux * 1000);
         LcdPrintf("%d.%03d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 1000, luminocity % 1000);
+      }
+      else if (lux >= 10)
+      {
+        int luminocity = (int)(lux * 10000);
+        LcdPrintf("%d.%04d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 10000, luminocity % 10000);
       }
       else
       {
-        int luminocity = (int)(result.lux * 10000);
-        LcdPrintf("%d.%04d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 10000, luminocity % 10000);
+        int luminocity = (int)(lux * 100000);
+        LcdPrintf("%d.%05d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 100000, luminocity % 100000);
       }
     }
     LcdUpdate();

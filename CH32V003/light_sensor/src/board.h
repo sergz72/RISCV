@@ -39,6 +39,8 @@
 #define POWER_OFF     POWER_ON_PORT->BCR = POWER_ON_PIN
 #define POWER_ON      POWER_ON_PORT->BSHR = POWER_ON_PIN
 
+#define SENSOR_TSL2591
+
 void SysInit(void);
 void delayms(int ms);
 

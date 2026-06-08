@@ -1,5 +1,6 @@
 #include "board.h"
 #include <veml7700.h>
+#include <tsl2591.h>
 #include <delay.h>
 #include <string.h>
 
@@ -170,6 +171,7 @@ int SSD1306_I2C_Write(int num_bytes, unsigned char control_byte, unsigned char *
   return i2c_write(SSD1306_I2C_ADDRESS, i2c_buffer, num_bytes + 1, I2C_TIMEOUT, true);
 }
 
+#ifdef SENSOR_VEML7700
 int veml7700_read(unsigned char reg, unsigned short *data)
 {
   int rc = i2c_write(VEML7700_I2C_ADDRESS << 1, &reg, 1, I2C_TIMEOUT, false);
@@ -183,6 +185,31 @@ int veml7700_write(unsigned char reg, unsigned short value)
   unsigned char data[3] = {reg, (unsigned char)value, (unsigned char)(value >> 8)};
   return i2c_write(VEML7700_I2C_ADDRESS << 1, data, 3, I2C_TIMEOUT, true);
 }
+#endif
+
+#ifdef SENSOR_TSL2591
+int tsl2591_read8(unsigned char reg, unsigned char *data)
+{
+  int rc = i2c_write(TSL2591_I2C_ADDRESS << 1, &reg, 1, I2C_TIMEOUT, false);
+  if (rc)
+    return rc;
+  return i2c_read(TSL2591_I2C_ADDRESS << 1, data, 1, I2C_TIMEOUT);
+}
+
+int tsl2591_read16(unsigned char reg, unsigned short *data)
+{
+  int rc = i2c_write(TSL2591_I2C_ADDRESS << 1, &reg, 1, I2C_TIMEOUT, false);
+  if (rc)
+    return rc;
+  return i2c_read(TSL2591_I2C_ADDRESS << 1, (unsigned char*)data, 2, I2C_TIMEOUT);
+}
+
+int tsl2591_write(unsigned char reg, unsigned char value)
+{
+  unsigned char data[2] = {reg, value};
+  return i2c_write(TSL2591_I2C_ADDRESS << 1, data, 2, I2C_TIMEOUT, true);
+}
+#endif
 
 void delayms(int ms)
 {

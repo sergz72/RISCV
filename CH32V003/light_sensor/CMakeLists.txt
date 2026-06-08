@@ -36,6 +36,7 @@ file(GLOB SOURCES
         "../../../ARM_CLION/common_lib/display/font.c"
         "../../../ARM_CLION/common_lib/display/fonts/font18.c"
         "../../../ARM_CLION/common_lib/sensor/veml7700.c"
+        "../../../ARM_CLION/common_lib/sensor/tsl2591.c"
 )
 
 include_directories(src ../lib ../lib/inc ../../../ARM_CLION/common_lib ../../../ARM_CLION/common_lib/sensor ../../../ARM_CLION/common_lib/display)
