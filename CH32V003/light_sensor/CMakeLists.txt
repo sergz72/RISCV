@@ -29,17 +29,17 @@ file(GLOB SOURCES
         "../lib/src/ch32v00x_gpio.c"
         "../lib/src/ch32v00x_i2c.c"
         "../startup_ch32v00x.S"
-        "../../../ARM_CLION/common_lib/myprintf.c"
-        "../../../ARM_CLION/common_lib/ultoa.c"
-        "../../../ARM_CLION/common_lib/display/lcd.c"
-        "../../../ARM_CLION/common_lib/display/lcd_ssd1306.c"
-        "../../../ARM_CLION/common_lib/display/font.c"
-        "../../../ARM_CLION/common_lib/display/fonts/font18.c"
-        "../../../ARM_CLION/common_lib/sensor/veml7700.c"
-        "../../../ARM_CLION/common_lib/sensor/tsl2591.c"
+        "../../../common_lib/myprintf.c"
+        "../../../common_lib/ultoa.c"
+        "../../../common_lib/display/lcd.c"
+        "../../../common_lib/display/lcd_ssd1306.c"
+        "../../../common_lib/display/font.c"
+        "../../../common_lib/display/fonts/font12.c"
+        "../../../common_lib/sensor/veml7700.c"
+        "../../../common_lib/sensor/tsl2591.c"
 )
 
-include_directories(src ../lib ../lib/inc ../../../ARM_CLION/common_lib ../../../ARM_CLION/common_lib/sensor ../../../ARM_CLION/common_lib/display)
+include_directories(src ../lib ../lib/inc ../../../common_lib ../../../common_lib/sensor ../../../common_lib/display)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

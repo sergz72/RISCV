@@ -1,6 +1,6 @@
 #include "board.h"
 #include <delay.h>
-#include <fonts/font18.h>
+#include <fonts/font12.h>
 #include <veml7700.h>
 #include <tsl2591.h>
 
@@ -60,49 +60,56 @@ int main(void)
 #endif
 
   LcdInit();
-  LcdScreenFill(BLACK_COLOR);
 
   while (1)
   {
     float lux;
+    unsigned short raw;
+    unsigned int gain;
     int rc;
 
 #ifdef SENSOR_VEML7700
     veml7700_result veml_result;
     rc = veml7700_measure(&veml_result, 1);
     lux = veml_result.lux;
+    raw = veml_result.raw;
+    gain = veml_result.gainx8;
 #endif
 #ifdef SENSOR_TSL2591
     tsl2591_result tsl_result;
     delayms(2000);
     rc = tsl2591_measure(&tsl_result);
     lux = tsl_result.lux;
+    raw = tsl_result.rawch0;
+    gain = tsl_result.gain;
 #endif
+    LcdScreenFill(BLACK_COLOR);
     if (rc)
-      LcdDrawText(0, 4, "Error", &courierNew18ptFontInfo, WHITE_COLOR, BLACK_COLOR, NULL);
+      LcdDrawText(0, 0, "Error", &courierNew12ptFontInfo, WHITE_COLOR, BLACK_COLOR, NULL);
     else
     {
       if (lux >= 1000)
       {
         int luminocity = (int)(lux * 100);
-        LcdPrintf("%d.%02d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 100, luminocity % 100);
+        LcdPrintf("%d.%02d Lx", 0, 0, &courierNew12ptFontInfo, 1, luminocity / 100, luminocity % 100);
       }
       else if (lux >= 100)
       {
         int luminocity = (int)(lux * 1000);
-        LcdPrintf("%d.%03d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 1000, luminocity % 1000);
+        LcdPrintf("%d.%03d Lx", 0, 0, &courierNew12ptFontInfo, 1, luminocity / 1000, luminocity % 1000);
       }
       else if (lux >= 10)
       {
         int luminocity = (int)(lux * 10000);
-        LcdPrintf("%d.%04d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 10000, luminocity % 10000);
+        LcdPrintf("%d.%04d Lx", 0, 0, &courierNew12ptFontInfo, 1, luminocity / 10000, luminocity % 10000);
       }
       else
       {
         int luminocity = (int)(lux * 100000);
-        LcdPrintf("%d.%05d", 0, 4, &courierNew18ptFontInfo, 1, luminocity / 100000, luminocity % 100000);
+        LcdPrintf("%d.%05d Lx", 0, 0, &courierNew12ptFontInfo, 1, luminocity / 100000, luminocity % 100000);
       }
     }
+    LcdPrintf("G%d R%d", 0, 16, &courierNew12ptFontInfo, 1, gain, raw);
     LcdUpdate();
     LcdOn();
     Delay_Ms(2000);
