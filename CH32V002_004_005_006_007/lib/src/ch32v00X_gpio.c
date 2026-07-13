@@ -465,7 +465,7 @@ void GPIO_EXTILineConfig(uint8_t GPIO_PortSource, uint8_t GPIO_PinSource)
  *
  * @return  none
  */
-void GPIO_IPD_Unused(void)
+void __attribute__((weak)) GPIO_IPD_Unused(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure = {0};
     uint32_t chip = 0;

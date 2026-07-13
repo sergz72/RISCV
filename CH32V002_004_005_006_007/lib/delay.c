@@ -1,4 +1,4 @@
-#include <ch32v00x.h>
+#include <ch32v00X.h>
 
 static unsigned int  p_us;
 static unsigned int p_ms;

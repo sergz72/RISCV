@@ -1,0 +1,4 @@
+#ifndef _ETHERNET_COMMANDS_H
+#define _ETHERNET_COMMANDS_H
+
+#endif
