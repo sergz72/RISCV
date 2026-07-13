@@ -23,6 +23,7 @@
 #define I2C_TIMEOUT 10000
 #define I2C_INST    I2C1
 #define I2C_CLOCK   RCC_PB1Periph_I2C1
+#define I2C_SPEED   400000
 
 #define USART_TX_PIN       GPIO_Pin_5
 #define USART_RX_PIN       GPIO_Pin_6
@@ -65,16 +66,33 @@
 #define INA228_MAX_CHANNELS 1
 #define INA_ADDRESS 0x40
 
-extern volatile unsigned int timer_interrupt;
-extern volatile char command_line[COMMMAND_LINE_SIZE];
-extern volatile char *command_line_p, *command_line_echo_p;
-extern volatile bool command_ready;
+#define BUTTON1_PORT GPIOC
+#define BUTTON1_PIN  GPIO_Pin_7
+#define BUTTON1_PRESSED (!(BUTTON1_PORT->INDR & BUTTON1_PIN))
+#define BUTTON2_PORT GPIOA
+#define BUTTON2_PIN  GPIO_Pin_1
+#define BUTTON2_PRESSED (!(BUTTON2_PORT->INDR & BUTTON2_PIN))
+#define BUTTON3_PORT GPIOD
+#define BUTTON3_PIN  GPIO_Pin_7
+#define BUTTON3_PRESSED (!(BUTTON3_PORT->INDR & BUTTON3_PIN))
+
+#define ALERT_PORT GPIOC
+#define ALERT_PIN  GPIO_Pin_6
+#define CHECK_ALERT (ALERT_PORT->INDR & ALERT_PIN)
+
+#define DISPLAY_MAX_ROWS       4
+#define DISPLAY_MAX_COLUMNS    10
+#define DISPLAY_MAX_RECTANGLES 0
+#define CHAR_SPACE             0x20
+
+extern volatile bool timer_interrupt;
+extern volatile char command;
+extern volatile unsigned int time_since_boot_ms;
 
 void SysInit(void);
 void delayms(unsigned int);
 void TimerEnable(void);
 void usart_transmit(char c);
-int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout);
-int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout, bool stop);
+unsigned int get_keyboard_status(void);
 
 #endif

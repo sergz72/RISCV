@@ -23,7 +23,11 @@ file(GLOB SOURCES
         "src/main.c"
         "src/hal.c"
         "src/usart_handler.c"
+        "src/ina_func.c"
+        "src/ui.c"
         "../lib/delay.c"
+        "../lib/i2c.c"
+        "../lib/usart.c"
         "../lib/system_ch32v00X.c"
         "../lib/src/ch32v00X_misc.c"
         "../lib/src/ch32v00X_rcc.c"
@@ -41,6 +45,7 @@ file(GLOB SOURCES
         "../../../common_lib/display/lcd_ssd1306.c"
         "../../../common_lib/display/font.c"
         "../../../common_lib/display/fonts/font12.c"
+        "../../../common_lib/display/display2.c"
         "../../../common_lib/memory/spi_memory.c"
 )
 

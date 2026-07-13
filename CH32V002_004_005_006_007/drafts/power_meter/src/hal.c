@@ -5,51 +5,31 @@
 #include <string.h>
 #include <ina228.h>
 #include <spi_memory.h>
+#include <spi_soft.h>
+#include <i2c.h>
+#include <usart.h>
 
-#include "spi_soft.h"
+volatile bool timer_interrupt;
+volatile char command;
+volatile unsigned int time_since_boot_ms;
+unsigned int prev_keyboard_status;
 
-volatile unsigned int timer_interrupt;
-volatile char command_line[COMMMAND_LINE_SIZE];
-volatile char *command_line_p, *command_line_echo_p;
-volatile bool command_ready;
-
-#ifdef XPACK
-void __attribute__((naked)) TIM2_IRQHandler(void)
-#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_IRQHandler(void)
-#endif
 {
   timer_interrupt = 1;
+  time_since_boot_ms += 100;
   TIM2->INTFR = 0;
 }
 
-const USART_InitTypeDef USART_InitStructure = {
-  .USART_BaudRate = USART_BAUDRATE,
-  .USART_WordLength = USART_WordLength_8b,
-  .USART_StopBits = USART_StopBits_1,
-  .USART_Parity = USART_Parity_No,
-  .USART_HardwareFlowControl = USART_HardwareFlowControl_None,
-  .USART_Mode = USART_Mode_Tx | USART_Mode_Rx
-};
-
-#ifdef XPACK
-void __attribute__((naked)) USART_IRQHandler(void)
-#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) USART_IRQHandler(void)
-#endif
 {
   if(USART_GetITStatus(USART_INST, USART_IT_RXNE) != RESET)
-  {
-    char c = (char)USART_ReceiveData(USART_INST);
-    if (command_ready)
-      return;
-    if (c == '\r')
-      command_ready = true;
-    else
-      *command_line_p++ = c;
-  }
+    command = (char)USART_ReceiveData(USART_INST);
 }
 
+/*
+ * LED_TIMER = PD4(8)
+ */
 static void GPIOInit(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -60,6 +40,21 @@ static void GPIOInit(void)
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
   GPIO_InitStructure.GPIO_Pin = LED_TIMER_PIN;
   GPIO_Init(LED_TIMER_PORT, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+  GPIO_InitStructure.GPIO_Pin = BUTTON1_PIN;
+  GPIO_Init(BUTTON1_PORT, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Pin = BUTTON2_PIN;
+  GPIO_Init(BUTTON2_PORT, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+  GPIO_InitStructure.GPIO_Pin = BUTTON3_PIN;
+  GPIO_Init(BUTTON3_PORT, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_InitStructure.GPIO_Pin = ALERT_PIN;
+  GPIO_Init(ALERT_PORT, &GPIO_InitStructure);
 }
 
 static void TIM2Init(void)
@@ -87,63 +82,17 @@ static void TIM2Init(void)
   TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
 }
 
-static void USARTInit(void)
-{
-  GPIO_InitTypeDef  GPIO_InitStructure = {0};
-  NVIC_InitTypeDef  NVIC_InitStructure = {0};
-
-  USART_CLOCK_ENABLE;
-
-  GPIO_InitStructure.GPIO_Pin = USART_TX_PIN;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-  GPIO_Init(USART_PORT, &GPIO_InitStructure);
-  GPIO_InitStructure.GPIO_Pin = USART_RX_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-  GPIO_Init(USART_PORT, &GPIO_InitStructure);
-
-  USART_Init(USART_INST, (USART_InitTypeDef*)&USART_InitStructure);
-  USART_ITConfig(USART_INST, USART_IT_RXNE, ENABLE);
-
-  NVIC_InitStructure.NVIC_IRQChannel = USART_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = USART_INTERRUPT_PRIORITY;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
-
-  USART_Cmd(USART_INST, ENABLE);
-}
-
 /*
- * I2C_INST SCL = PA10(6)
- * I2C_INST SDA = PA11(5)
+ * CS   = PA2(13)
+ * MISO = PC0(16)
+ * MOSI = PC3(3)
+ * CLK  = PC4(4)
  */
-static void I2CInit(void)
-{
-  GPIO_InitTypeDef GPIO_InitStructure;
-  I2C_InitTypeDef I2C_InitTSturcture;
-
-  RCC_PB1PeriphClockCmd( I2C_CLOCK, ENABLE );
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-  GPIO_Init( GPIOC, &GPIO_InitStructure );
-
-  I2C_InitTSturcture.I2C_ClockSpeed = 400000;
-  I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
-  I2C_InitTSturcture.I2C_DutyCycle = I2C_DutyCycle_16_9;
-  I2C_InitTSturcture.I2C_OwnAddress1 = 0;
-  I2C_InitTSturcture.I2C_Ack = I2C_Ack_Enable;
-  I2C_InitTSturcture.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-  I2C_Init( I2C_INST, &I2C_InitTSturcture );
-
-  I2C_Cmd( I2C_INST, ENABLE );
-}
-
 static void SPIInit(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
+
+  spi_channel_init(0, 0);
 
   GPIO_InitStructure.GPIO_Pin = SPI_MISO_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
@@ -161,6 +110,11 @@ static void SPIInit(void)
 
 void SysInit(void)
 {
+  command = 0;
+  timer_interrupt = false;
+  prev_keyboard_status = 0;
+  time_since_boot_ms = 0;
+
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
   Delay_Init();
   GPIOInit();
@@ -168,7 +122,6 @@ void SysInit(void)
   I2CInit();
   SPIInit();
   USARTInit();
-  timer_interrupt = 0;
 }
 
 void delayms(unsigned int ms)
@@ -179,108 +132,6 @@ void delayms(unsigned int ms)
 void TimerEnable(void)
 {
   TIM_Cmd(TIM2, ENABLE);
-}
-
-int i2c_read(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout)
-{
-  unsigned int t;
-
-  I2C_INST->CTLR1 |= I2C_CTLR1_START;
-
-  t = timeout;
-  while( !I2C_CheckEvent( I2C_INST, I2C_EVENT_MASTER_MODE_SELECT ) )
-  {
-    t--;
-    if (!t)
-    {
-      I2C_GenerateSTOP( I2C_INST, ENABLE );
-      return 1;
-    }
-  }
-  I2C_Send7bitAddress( I2C_INST, address << 1, I2C_Direction_Receiver );
-  t = timeout;
-  while( !I2C_CheckEvent( I2C_INST, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED ) )
-  {
-    t--;
-    if (!t)
-    {
-      I2C_GenerateSTOP( I2C_INST, ENABLE );
-      return 2;
-    }
-  }
-  while (l--)
-  {
-    t = timeout;
-    while ( !I2C_GetFlagStatus( I2C_INST, I2C_FLAG_RXNE ) )
-    {
-      //todo I2C_AcknowledgeConfig( I2C_INST, DISABLE );
-      t--;
-      if (!t)
-      {
-        I2C_GenerateSTOP( I2C_INST, ENABLE );
-        return 3;
-      }
-    }
-    *data++ = I2C_ReceiveData(I2C_INST);
-  }
-  I2C_GenerateSTOP( I2C_INST, ENABLE );
-  return 0;
-}
-
-int i2c_write(unsigned char address, unsigned char *data, unsigned int l, unsigned int timeout, bool stop)
-{
-  unsigned int t;
-
-  I2C_INST->CTLR1 |= I2C_CTLR1_START;
-
-  t = timeout;
-  while( !I2C_CheckEvent( I2C_INST, I2C_EVENT_MASTER_MODE_SELECT ) )
-  {
-    t--;
-    if (!t)
-    {
-      I2C_GenerateSTOP( I2C_INST, ENABLE );
-      return 4;
-    }
-  }
-  I2C_Send7bitAddress( I2C_INST, address << 1, I2C_Direction_Transmitter );
-  t = timeout;
-  while( !I2C_CheckEvent( I2C_INST, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED ) )
-  {
-    t--;
-    if (!t)
-    {
-      I2C_GenerateSTOP( I2C_INST, ENABLE );
-      return 5;
-    }
-  }
-  while (l--)
-  {
-    t = timeout;
-    while ( !I2C_GetFlagStatus( I2C_INST, I2C_FLAG_TXE ) )
-    {
-      t--;
-      if (!t)
-      {
-        I2C_GenerateSTOP( I2C_INST, ENABLE );
-        return 6;
-      }
-    }
-    I2C_SendData( I2C_INST, *data++);
-  }
-  t = timeout;
-  while( !I2C_CheckEvent( I2C_INST, I2C_EVENT_MASTER_BYTE_TRANSMITTED ) )
-  {
-    t--;
-    if (!t)
-    {
-      I2C_GenerateSTOP( I2C_INST, ENABLE );
-      return 7;
-    }
-  }
-  if (stop)
-    I2C_GenerateSTOP( I2C_INST, ENABLE );
-  return 0;
 }
 
 int ina228ReadRegister16(int channel, unsigned char address, unsigned char reg, unsigned short *data)
@@ -358,17 +209,19 @@ void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycle
     spi_finish(channel);
 }
 
-void usart_transmit(char c)
+unsigned int get_keyboard_status(void)
 {
-  while(USART_GetFlagStatus(USART_INST, USART_FLAG_TXE) == RESET) /* waiting for sending finish */
-    ;
-  USART_SendData(USART_INST, c);
-}
-
-void puts_(const char *s)
-{
-  while (*s)
-    usart_transmit(*s++);
+  unsigned int status = BUTTON1_PRESSED ? 1 : 0;
+  if (BUTTON2_PRESSED)
+    status |= 2;
+  if (BUTTON3_PRESSED)
+    status |= 4;
+  if ((prev_keyboard_status && !status) || (!prev_keyboard_status && status))
+  {
+    prev_keyboard_status = status;
+    return status;
+  }
+  return 0;
 }
 
 void GPIO_IPD_Unused(void)
