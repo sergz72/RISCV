@@ -85,6 +85,8 @@
 #define DISPLAY_MAX_RECTANGLES 0
 #define CHAR_SPACE             0x20
 
+#define FLASH_PAGE_SIZE 256
+
 extern volatile bool timer_interrupt;
 extern volatile char command;
 extern volatile unsigned int time_since_boot_ms;

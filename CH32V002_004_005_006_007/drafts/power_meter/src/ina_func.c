@@ -32,7 +32,26 @@ int ina_init(void)
   return ina228SetConfig(0, INA_ADDRESS, cfg0);
 }
 
+int ina_set_high_precision(void)
+{
+  return ina228SetConfig(0, INA_ADDRESS, cfg0);
+}
+
+int ina_set_low_precision(void)
+{
+  return ina228SetConfig(0, INA_ADDRESS, cfg1);
+}
+
 int ina_read(void)
 {
-  return 1;
+  int value;
+  int rc = ina228GetBusVoltage(0, INA_ADDRESS, &value);
+  if (rc)
+    return rc;
+  voltage_uv = value > 0 ? value : 0;
+  rc = ina228GetShuntCurrent(0, INA_ADDRESS, 1000, &value);
+  if (rc)
+    return rc;
+  current_ua = value > 0 ? value : 0;
+  return 0;
 }

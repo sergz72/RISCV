@@ -24,6 +24,7 @@ file(GLOB SOURCES
         "src/hal.c"
         "src/usart_handler.c"
         "src/ina_func.c"
+        "src/flash_func.c"
         "src/ui.c"
         "../lib/delay.c"
         "../lib/i2c.c"

@@ -209,6 +209,14 @@ void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycle
     spi_finish(channel);
 }
 
+void qspi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
+{
+}
+
+void qspi_set_sio_direction(int out0, int out1, int out2, int out3)
+{
+}
+
 unsigned int get_keyboard_status(void)
 {
   unsigned int status = BUTTON1_PRESSED ? 1 : 0;

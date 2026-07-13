@@ -3,6 +3,8 @@
 #include <display2.h>
 #include <fonts/font12.h>
 #include "ina_func.h"
+#include "flash_func.h"
+#include <spi_memory.h>
 
 static unsigned int time_minutes;
 static unsigned int time_hours;
@@ -39,8 +41,7 @@ static void InitCurrentRow(void)
   DisplaySetChar(dotX, 0, '.');
   DisplaySetChar(dotX + 4, 0, '.');
   DisplaySetChar(dotX + 8, 0, '.');
-  if (!high_precision)
-    DisplaySetChar(0, 0, 'L');
+  DisplaySetChar(0, 0, high_precision ? ' ' : 'L');
 }
 
 static void InitVoltageRow(void)
@@ -88,7 +89,22 @@ static void ShowDays(void)
 
 static void ShowCurrent(void)
 {
-
+  unsigned int c = current_ua / (high_precision ? 10 : 100);
+  int shift = high_precision ? 0 : 1;
+  unsigned int zero_char = '0';
+  for (int i = 9; i >= shift; i--)
+  {
+    if ((i == 7 + shift) || (i == 4 + shift))
+      continue;
+    if (c)
+    {
+      zero_char = ' ';
+      DisplaySetChar(i, 1, '0' + (c % 10));
+      i /= 10;
+    }
+    else
+      DisplaySetChar(i, 1, i >= 6 + shift ? '0' : zero_char);
+  }
 }
 
 static void ShowVoltage(void)
@@ -125,6 +141,18 @@ static void ShowMah(void)
     else
       DisplaySetChar(i, 3, ' ');
   }
+}
+
+static void StartRecording(void)
+{
+  flash_init();
+  DisplaySetChar(0, 1, 'R');
+}
+
+static void StopRecording(void)
+{
+  flash_save();
+  DisplaySetChar(0, 1, ' ');
 }
 
 void UI_Init(void)
@@ -183,8 +211,17 @@ void Process_Timer_Event(unsigned int keyboard_status)
     case 1: // low/high sensitivity change
       high_precision = !high_precision;
       InitCurrentRow();
+      if (high_precision)
+        ina_set_high_precision();
+      else
+        ina_set_low_precision();
       break;
     case 2: // start/stop recording
+      recording_started = !recording_started;
+      if (recording_started)
+        StartRecording();
+      else
+        StopRecording();
       break;
     case 4: // reset
       time_since_boot_ms = time_minutes = time_hours = time_days = prev_seconds = total_mah = 0;
