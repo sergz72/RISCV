@@ -28,9 +28,9 @@ static const INA228AdcConfig adc_cfg = {
   .bits = {
     .awg = INA228_AVG_1024,
     .mode = INA228_MODE_SHUNT_BUS_CONT,
-    .vbusct = INA228_CT_540,
-    .vshct = INA228_CT_540,
-    .vtct = INA228_CT_540
+    .vbusct = INA228_CT_280,
+    .vshct = INA228_CT_280,
+    .vtct = INA228_CT_280
   }
 };
 

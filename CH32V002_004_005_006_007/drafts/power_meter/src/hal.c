@@ -56,7 +56,7 @@ static void GPIOInit(void)
   GPIO_InitStructure.GPIO_Pin = BUTTON3_PIN;
   GPIO_Init(BUTTON3_PORT, &GPIO_InitStructure);
 
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
   GPIO_InitStructure.GPIO_Pin = ALERT_PIN;
   GPIO_Init(ALERT_PORT, &GPIO_InitStructure);
 }

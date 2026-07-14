@@ -29,6 +29,8 @@ int main(void)
 
   spi_memory_init();
 
+  UI_Init();
+
   TimerEnable();
 
   while (1)
