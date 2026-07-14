@@ -38,9 +38,8 @@ static void init_row(unsigned int row)
 static void InitCurrentRow(void)
 {
   const unsigned int dotX = 3 + (high_precision ? 0 : 1);
-  DisplaySetChar(dotX, 0, '.');
-  DisplaySetChar(dotX + 4, 0, '.');
-  DisplaySetChar(dotX + 8, 0, '.');
+  DisplaySetChar(dotX, 0, 'm');
+  DisplaySetChar(dotX + 4, 0, 'u');
   DisplaySetChar(0, 0, high_precision ? ' ' : 'L');
 }
 
@@ -52,9 +51,9 @@ static void InitVoltageRow(void)
 
 static void InitTimeRow(void)
 {
-  DisplaySetChar(1, 1, ':');
-  DisplaySetChar(4, 1, ':');
-  DisplaySetChar(7, 1, ':');
+  DisplaySetChar(1, 2, ':');
+  DisplaySetChar(4, 2, ':');
+  DisplaySetChar(7, 2, ':');
 }
 
 static void InitMahRow(void)
@@ -91,19 +90,17 @@ static void ShowCurrent(void)
 {
   unsigned int c = current_ua / (high_precision ? 10 : 100);
   int shift = high_precision ? 0 : 1;
-  unsigned int zero_char = '0';
   for (int i = 9; i >= shift; i--)
   {
-    if ((i == 7 + shift) || (i == 4 + shift))
+    if ((i == 7 + shift) || (i == 3 + shift))
       continue;
     if (c)
     {
-      zero_char = ' ';
-      DisplaySetChar(i, 1, '0' + (c % 10));
+      DisplaySetChar(i, 0, '0' + (c % 10));
       i /= 10;
     }
     else
-      DisplaySetChar(i, 1, i >= 6 + shift ? '0' : zero_char);
+      DisplaySetChar(i, 0, i >= 6 + shift ? '0' : ' ');
   }
 }
 
@@ -131,7 +128,7 @@ static void ShowVoltage(void)
 static void ShowMah(void)
 {
   unsigned int v = total_mah;
-  for (int i = 5; i >= 0; i--)
+  for (int i = 6; i >= 0; i--)
   {
     if (v)
     {
@@ -139,7 +136,7 @@ static void ShowMah(void)
       v /= 10;
     }
     else
-      DisplaySetChar(i, 3, ' ');
+      DisplaySetChar(i, 3, i == 6 ? '0' : ' ');
   }
 }
 
@@ -153,6 +150,16 @@ static void StopRecording(void)
 {
   flash_save();
   DisplaySetChar(0, 1, ' ');
+}
+
+void StartLogging(void)
+{
+  DisplaySetChar(1, 1, 'L');
+}
+
+void StopLogging(void)
+{
+  DisplaySetChar(1, 1, ' ');
 }
 
 void UI_Init(void)
@@ -208,7 +215,7 @@ void Process_Timer_Event(unsigned int keyboard_status)
 
   switch (keyboard_status)
   {
-    case 1: // low/high sensitivity change
+    case KB_RESOLUTION: // low/high sensitivity change
       high_precision = !high_precision;
       InitCurrentRow();
       if (high_precision)
@@ -216,20 +223,22 @@ void Process_Timer_Event(unsigned int keyboard_status)
       else
         ina_set_low_precision();
       break;
-    case 2: // start/stop recording
+    case KB_RECORDING: // start/stop recording
       recording_started = !recording_started;
       if (recording_started)
         StartRecording();
       else
         StopRecording();
       break;
-    case 4: // reset
+    case KB_RESET: // reset
       time_since_boot_ms = time_minutes = time_hours = time_days = prev_seconds = total_mah = 0;
       ShowSeconds(0);
       ShowMinutes(0);
       ShowHours(0);
       ShowDays();
       ShowMah();
+      break;
+    default:
       break;
   }
 

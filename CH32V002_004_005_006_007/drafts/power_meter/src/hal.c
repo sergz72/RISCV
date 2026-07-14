@@ -34,7 +34,11 @@ static void GPIOInit(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
 
+#ifdef CH32V002
   RCC_PB2PeriphClockCmd(RCC_PB2Periph_GPIOD, ENABLE);
+#else
+  RCC_PB2PeriphClockCmd(RCC_PB2Periph_GPIOD | RCC_PB2Periph_GPIOC, ENABLE);
+#endif
 
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
@@ -82,12 +86,7 @@ static void TIM2Init(void)
   TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
 }
 
-/*
- * CS   = PA2(13)
- * MISO = PC0(16)
- * MOSI = PC3(3)
- * CLK  = PC4(4)
- */
+#ifdef CH32V002
 static void SPIInit(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -107,6 +106,46 @@ static void SPIInit(void)
   GPIO_InitStructure.GPIO_Pin = SPI_CS_PIN;
   GPIO_Init(SPI_CS_PORT, &GPIO_InitStructure);
 }
+#else
+static void SPIInit(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  SPI_InitTypeDef SPI_InitStructure;
+
+  RCC_PB2PeriphClockCmd(SPI_PORT_CLOCK | SPI_CLOCK, ENABLE);
+
+  SPI_REMAP;
+
+  GPIO_InitStructure.GPIO_Pin = SPI_MOSI_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
+  GPIO_Init(SPI_MOSI_PORT, &GPIO_InitStructure);
+  GPIO_InitStructure.GPIO_Pin = SPI_SCK_PIN;
+  GPIO_Init(SPI_SCK_PORT, &GPIO_InitStructure);
+
+  SPI_CS_SET(0);
+  GPIO_InitStructure.GPIO_Pin = SPI_CS_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_Init(SPI_CS_PORT, &GPIO_InitStructure);
+
+  GPIO_InitStructure.GPIO_Pin = SPI_MISO_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+  GPIO_Init(SPI_MISO_PORT, &GPIO_InitStructure);
+
+  SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+  SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+  SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+  SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+  SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
+  SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;
+  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+  SPI_InitStructure.SPI_CRCPolynomial = 7;
+  SPI_Init( SPI_INST, &SPI_InitStructure );
+
+  SPI_Cmd( SPI_INST, ENABLE );
+}
+#endif
 
 void SysInit(void)
 {
@@ -114,6 +153,8 @@ void SysInit(void)
   timer_interrupt = false;
   prev_keyboard_status = 0;
   time_since_boot_ms = 0;
+
+  RCC_PB2PeriphClockCmd(RCC_PB2Periph_AFIO, ENABLE);
 
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
   Delay_Init();
@@ -186,6 +227,7 @@ int SSD1306_I2C_Write(int num_bytes, unsigned char control_byte, unsigned char *
   return i2c_write(SSD1306_I2C_ADDRESS >> 1, i2c_buffer, num_bytes + 1, I2C_TIMEOUT, true);
 }
 
+#ifdef CH32V002
 void spi_finish(int channel)
 {
   SPI_CS_SET(0);
@@ -208,6 +250,40 @@ void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycle
   if (set_cs)
     spi_finish(channel);
 }
+#else
+void spi_finish(int channel)
+{
+  SPI_CS_SET(0);
+}
+
+static unsigned char spi_send_receive(unsigned char data)
+{
+  while( SPI_I2S_GetFlagStatus( SPI_INST, SPI_I2S_FLAG_TXE ) == RESET )
+    ;
+  SPI_I2S_SendData(SPI_INST, data);
+  while(SPI_I2S_GetFlagStatus( SPI_INST, SPI_I2S_FLAG_RXNE ) == RESET )
+    ;
+  return SPI_I2S_ReceiveData(SPI_INST);
+}
+
+void spi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
+{
+  SPI_CS_CLR(0);
+  while (nwrite--)
+    spi_send_receive(*wdata++);
+  nop_cycles >>= 3;
+  while (nop_cycles--)
+    spi_send_receive(0);
+  if (nread)
+  {
+    while (nread--)
+      *rdata++ = spi_send_receive(0);
+  }
+
+  if (set_cs)
+    spi_finish(channel);
+}
+#endif
 
 void qspi_trfr(int channel, int nwrite, const unsigned char *wdata, int nop_cycles, int nread, unsigned char *rdata, int set_cs)
 {
@@ -219,11 +295,11 @@ void qspi_set_sio_direction(int out0, int out1, int out2, int out3)
 
 unsigned int get_keyboard_status(void)
 {
-  unsigned int status = BUTTON1_PRESSED ? 1 : 0;
+  unsigned int status = BUTTON1_PRESSED ? KB_RESOLUTION : 0;
   if (BUTTON2_PRESSED)
-    status |= 2;
+    status |= KB_RECORDING;
   if (BUTTON3_PRESSED)
-    status |= 4;
+    status |= KB_RESET;
   if ((prev_keyboard_status && !status) || (!prev_keyboard_status && status))
   {
     prev_keyboard_status = status;
@@ -232,6 +308,7 @@ unsigned int get_keyboard_status(void)
   return 0;
 }
 
+#ifdef CH32V002
 void GPIO_IPD_Unused(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
@@ -251,3 +328,4 @@ void GPIO_IPD_Unused(void)
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_2|GPIO_Pin_3;
   GPIO_Init(GPIOD, &GPIO_InitStructure);
 }
+#endif

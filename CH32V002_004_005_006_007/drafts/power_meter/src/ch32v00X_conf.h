@@ -8,6 +8,7 @@
 #include "ch32v00X_misc.h"
 #include "ch32v00X_usart.h"
 #include "ch32v00X_i2c.h"
+#include "ch32v00X_spi.h"
 
 #endif
 

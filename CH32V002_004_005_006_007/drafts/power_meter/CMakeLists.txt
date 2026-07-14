@@ -9,7 +9,12 @@ SET(CMAKE_C_COMPILER_WORKS 1)
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
-SET(LINKER_SCRIPT ../../Link_002.ld)
+if (CH32V002)
+    SET(LINKER_SCRIPT ../../Link_002.ld)
+    add_definitions(-DCH32V002)
+else()
+    SET(LINKER_SCRIPT ../../Link_006_007.ld)
+endif()
 
 SET(COMMON_FLAGS "-march=rv32ecxw_zmmul -mabi=ilp32e -msmall-data-limit=8 -mno-save-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 
@@ -36,6 +41,7 @@ file(GLOB SOURCES
         "../lib/src/ch32v00X_tim.c"
         "../lib/src/ch32v00X_usart.c"
         "../lib/src/ch32v00X_i2c.c"
+        "../lib/src/ch32v00X_spi.c"
         "../startup_ch32v00X.S"
         "../../../common_lib/common_printf.c"
         "../../../common_lib/myprintf.c"

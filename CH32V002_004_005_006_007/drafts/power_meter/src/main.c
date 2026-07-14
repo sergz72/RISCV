@@ -36,7 +36,7 @@ int main(void)
     __WFI();
     if (timer_interrupt)
     {
-      if (CHECK_ALERT)
+      if (!CHECK_ALERT)
       {
         if (!ina_read())
         {
