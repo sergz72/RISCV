@@ -3,7 +3,9 @@
 
 void UI_Init(void);
 void Process_Timer_Event(unsigned int keyboard_status);
-void StopLogging(void);
-void StartLogging(void);
+int StopLogging(void);
+int StartLogging(void);
+int StartRecording(void);
+int StopRecording(void);
 
 #endif

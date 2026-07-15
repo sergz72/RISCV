@@ -97,7 +97,7 @@ static void ShowCurrent(void)
     if (c)
     {
       DisplaySetChar(i, 0, '0' + (c % 10));
-      i /= 10;
+      c /= 10;
     }
     else
       DisplaySetChar(i, 0, i >= 6 + shift ? '0' : ' ');
@@ -140,26 +140,38 @@ static void ShowMah(void)
   }
 }
 
-static void StartRecording(void)
+int StartRecording(void)
 {
+  if (recording_started)
+    return 1;
   flash_init();
   DisplaySetChar(0, 1, 'R');
+  return 0;
 }
 
-static void StopRecording(void)
+int StopRecording(void)
 {
+  if (!recording_started)
+    return 1;
   flash_save();
   DisplaySetChar(0, 1, ' ');
+  return 0;
 }
 
-void StartLogging(void)
+int StartLogging(void)
 {
+  if (log_started)
+    return 1;
   DisplaySetChar(1, 1, 'L');
+  return 0;
 }
 
-void StopLogging(void)
+int StopLogging(void)
 {
+  if (!log_started)
+    return 1;
   DisplaySetChar(1, 1, ' ');
+  return 0;
 }
 
 void UI_Init(void)
