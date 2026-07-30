@@ -106,21 +106,21 @@ void DBGMCU_Config(uint32_t DBGMCU_Periph, FunctionalState NewState)
  *
  * @return Device identifier.
  *          ChipID List-
- *          CH32V303CBT6-0x303305x4
- *          CH32V303RBT6-0x303205x4
- *          CH32V303RCT6-0x303105x4
- *          CH32V303VCT6-0x303005x4
- *          CH32V305FBP6-0x305205x8
- *          CH32V305RBT6-0x305005x8
- *          CH32V305GBU6-0x305B05x8
- *          CH32V305CCT6-0x305C05x8
- *          CH32V307WCU6-0x307305x8
- *          CH32V307FBP6-0x307205x8
- *          CH32V307RCT6-0x307105x8
- *          CH32V307VCT6-0x307005x8
- *          CH32V317VCT6-0x3170B5X8
- *          CH32V317WCU6-0x3173B5X8
- *          CH32V317TCU6-0x3175B5X8
+ *          CH32V303CBT-0x303305x4
+ *          CH32V303RBT-0x303205x4
+ *          CH32V303RCT-0x303105x4
+ *          CH32V303VCT-0x303005x4
+ *          CH32V305FBP-0x305205x8
+ *          CH32V305RBT-0x305005x8
+ *          CH32V305GBU-0x305B05x8
+ *          CH32V305CCT-0x305C05x8
+ *          CH32V307WCU-0x307305x8
+ *          CH32V307FBP-0x307205x8
+ *          CH32V307RCT-0x307105x8
+ *          CH32V307VCT-0x307005x8
+ *          CH32V317VCT-0x3170B5X8
+ *          CH32V317WCU-0x3173B5X8
+ *          CH32V317TCU-0x3175B5X8
  */
 uint32_t DBGMCU_GetCHIPID( void )
 {

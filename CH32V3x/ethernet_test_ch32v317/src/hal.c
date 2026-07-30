@@ -8,9 +8,6 @@ volatile unsigned int timeCnt;
 volatile unsigned int timer_interrupt;
 
 unsigned char MACAddr[6];
-unsigned char IPAddr[4]   = {0, 0, 0, 0};                    //IP address
-unsigned char GWIPAddr[4] = {0, 0, 0, 0};                    //Gateway IP address
-unsigned char IPMask[4]   = {0, 0, 0, 0};                    //subnet mask
 
 /*********************************************************************
  * @fn      ETH_IRQHandler
@@ -43,15 +40,11 @@ static void GPIOInit(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
 
-  // led green
-  GPIO_InitStructure.GPIO_Pin = LED_BLUE_PIN;
+  // led blue
+  GPIO_InitStructure.GPIO_Pin = LED_PIN;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(LED_BLUE_PORT, &GPIO_InitStructure);
-
-  // led red
-  GPIO_InitStructure.GPIO_Pin = LED_RED_PIN;
-  GPIO_Init(LED_RED_PORT, &GPIO_InitStructure);
+  GPIO_Init(LED_PORT, &GPIO_InitStructure);
 }
 
 /*********************************************************************
@@ -77,7 +70,7 @@ void TIM2_Init( void )
   NVIC_EnableIRQ(TIM2_IRQn);
 }
 
-/*static void Configure_Memory_Split(void)
+static void Configure_Memory_Split(void)
 {
   // Get the current User Option Byte value
   uint16_t userByte = FLASH_GetUserOptionByte();
@@ -99,11 +92,11 @@ void TIM2_Init( void )
     // The hardware change requires a cold system reset to take effect
     NVIC_SystemReset();
   }
-}*/
+}
 
 void HalInit(void)
 {
-  //Configure_Memory_Split();
+  Configure_Memory_Split();
 
   timeCnt = timer_interrupt = 0;
 
@@ -116,11 +109,5 @@ void HalInit(void)
   TIM2_Init();
 
   WCHNET_GetMacAddr(MACAddr);
-  unsigned char rc = ETH_LibInit(IPAddr,GWIPAddr,IPMask,MACAddr);
-  if(rc != WCHNET_ERR_SUCCESS)
-  {
-    LED_RED_ON;
-    while(1)
-      __WFI();
-  }
+  ETH_Init(MACAddr);
 }

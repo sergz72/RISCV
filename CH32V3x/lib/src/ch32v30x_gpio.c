@@ -584,7 +584,7 @@ void GPIO_IPD_Unused(void)
     switch(chip)
     {
 #ifdef CH32V30x_D8
-        case 0x30330504:     //CH32V303CBT6
+        case 0x30330504:     //CH32V303CBT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_2|GPIO_Pin_3\
@@ -617,7 +617,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30320504:     //CH32V303RBT6
+        case 0x30320504:     //CH32V303RBT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_3|GPIO_Pin_4\
@@ -641,7 +641,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30310504:     //CH32V303RCT6
+        case 0x30310504:     //CH32V303RCT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_3|GPIO_Pin_4\
@@ -665,12 +665,12 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30300504:     //CH32V303VCT6
+        case 0x30300504:     //CH32V303VCT
         {        
             break;
         }
 #elif defined  (CH32V30x_D8C)
-        case 0x30520508:     //CH32V305FBP6
+        case 0x30520508:     //CH32V305FBP
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_2\
                                          |GPIO_Pin_3|GPIO_Pin_4\
@@ -719,7 +719,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x305C0508:     //CH32V305CCT6
+        case 0x305C0508:     //CH32V305CCT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7|GPIO_Pin_8\
                                          |GPIO_Pin_9|GPIO_Pin_10\
@@ -751,7 +751,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30500508:     //CH32V305RBT6
+        case 0x30500508:     //CH32V305RBT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_3|GPIO_Pin_4\
@@ -775,7 +775,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30710508:     //CH32V307RCT6
+        case 0x30710508:     //CH32V307RCT
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_3|GPIO_Pin_4\
@@ -799,7 +799,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30730508:     //CH32V307WCU6
+        case 0x30730508:     //CH32V307WCU
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1\
                                           |GPIO_Pin_3|GPIO_Pin_4\
@@ -822,7 +822,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x3173B508:     //CH32V317WCU6
+        case 0x3173B508:     //CH32V317WCU
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6|GPIO_Pin_7\
                                           |GPIO_Pin_8|GPIO_Pin_9;
@@ -844,7 +844,7 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x3175B508:     //CH32V317TCU6
+        case 0x3175B508:     //CH32V317TCU
         {
             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9|GPIO_Pin_10;
             GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
@@ -878,11 +878,11 @@ void GPIO_IPD_Unused(void)
             GPIO_Init(GPIOE, &GPIO_InitStructure);
             break;
         }
-        case 0x30700508:     //CH32V307VCT6
+        case 0x30700508:     //CH32V307VCT
         {        
             break;
         }
-        case 0x3170B508:     //CH32V317VCT6
+        case 0x3170B508:     //CH32V317VCT
         {        
             break;
         }
