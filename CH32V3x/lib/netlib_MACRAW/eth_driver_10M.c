@@ -12,6 +12,7 @@
 
 #include "string.h"
 #include "eth_driver.h"
+#include <eth.h>
 
 /* LED state @LED_STAT */
 #define  LED_ON                         0
@@ -749,7 +750,7 @@ void ETH_Configuration( uint8_t *macAddr )
     ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Disable;
     ETH_InitStructure.ETH_PromiscuousMode = ETH_PromiscuousMode_Disable;
     ETH_InitStructure.ETH_BroadcastFramesReception = ETH_BroadcastFramesReception_Enable;
-    ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
+    ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_None;
     ETH_InitStructure.ETH_UnicastFramesFilter = ETH_UnicastFramesFilter_Perfect;
     ETH_InitStructure.ETH_PassControlFrames = ETH_PassControlFrames_BlockAll;
     ETH_InitStructure.ETH_DestinationAddrFilter = ETH_DestinationAddrFilter_Normal;
@@ -809,7 +810,7 @@ void ETH_Configuration( uint8_t *macAddr )
  *
  * @return  Send status.
  */
-uint32_t ethernet_packet_send(uint8_t *buff, uint16_t len)
+int ethernet_packet_send(const void *buff, unsigned int len)
 {
     /* Check if the descriptor is owned by the ETHERNET DMA (when set) or CPU (when reset) */
     if((DMATxDescToSet->Status & ETH_DMATxDesc_OWN) != (u32)RESET)

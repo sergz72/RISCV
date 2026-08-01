@@ -168,8 +168,6 @@ void ETH_Init( uint8_t *macAddr );
 void WCHNET_GetMacAddr( uint8_t *p );
 void WCHNET_TimeIsr( uint16_t timperiod );
 void ETH_Configuration( uint8_t *macAddr );
-uint32_t ethernet_packet_send(uint8_t *buff, uint16_t len);
-void ethernet_packet_received(void *buffer, unsigned int length);
 
 #ifdef __cplusplus
 }

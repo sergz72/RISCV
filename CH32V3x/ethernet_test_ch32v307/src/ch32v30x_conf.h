@@ -10,6 +10,7 @@
 #include "ch32v30x_tim.h"
 #include "ch32v30x_eth.h"
 #include "ch32v30x_dbgmcu.h"
-#include "ch32v30x_flash.h"
+//#include "ch32v30x_flash.h"
+#include "ch32v30x_rng.h"
 
 #endif

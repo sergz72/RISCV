@@ -1,14 +1,18 @@
 #include "board.h"
 #include "debug.h"
 #include "ch32v30x_usbfs_device.h"
-#include "delay.h"
 #include <usb_cdc.h>
 #include <stdarg.h>
 #include <shell.h>
 #include <getstring.h>
 #include <eth_driver.h>
-#include "eth_queue.h"
-#include <queue.h>
+#include <eth_ntp.h>
+#include <eth.h>
+#include <eth_queue.h>
+
+static const unsigned char ntp_server_address[16] = {
+  0x2a, 0x00, 0x8a, 0x60, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x23
+};
 
 static unsigned char usb_cdc_buffer[USB_CDC_RX_BUFFER_SIZE];
 static char command_line[200];
@@ -61,13 +65,26 @@ static void LEDTimerToggle(void)
     LED_BLUE_OFF;
 }
 
+void eth_set_prefix_callback(void)
+{
+  if (!ntp_time_is_set)
+    ETH_NTP_Send_Timestamp_Request();
+  LED_BLUE_ON;
+}
+
+void ntp_time_received_callback(unsigned int unix_time)
+{
+  //printf("Unix time from a NTP server is %u\n", unix_time);
+  LED_RED_ON;
+}
+
 int main(void)
 {
   int rc;
 
   led_state = 0;
 
-  HalInit();
+  HalInit(ntp_server_address);
 
   USBFS_RCC_Init( );
   USBFS_Device_Init( ENABLE );
@@ -81,19 +98,13 @@ int main(void)
     /*Ethernet library main task function,
      * which needs to be called cyclically*/
     WCHNET_MainTask();
-
-    unsigned int message_size;
-    unsigned char *data = ETH_IRQ_QueuePoll(&message_size);
-    if (data)
-    {
-      usb_printf("ethernet packet with length %d has been received.\n$ ", message_size);
-    }
+    ETH_Handler();
 
     if (timer_interrupt)
     {
       timer_interrupt = 0;
-      if ((timeCnt & 32) == 0)
-        LEDTimerToggle();
+      //if ((timeCnt & 32) == 0)
+      //  LEDTimerToggle();
       cdc_length = CDC_Receive(usb_cdc_buffer, sizeof(usb_cdc_buffer));
       cdc_buffer_p = usb_cdc_buffer;
       while (cdc_length)

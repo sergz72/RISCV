@@ -29,9 +29,10 @@
 #define SHELL_HISTORY_SIZE 20
 #define SHELL_HISTORY_ITEM_LENGTH 100
 
-#define ETH_IRQ_QUEUE_SIZE 4
+#define ETH_IRQ_QUEUE_SIZE  4
+#define ETH_USER_QUEUE_SIZE 4
 
-void HalInit(void);
+void HalInit(const unsigned char* ntp_server_address);
 
 extern volatile unsigned int timeCnt, timer_interrupt;
 

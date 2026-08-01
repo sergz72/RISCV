@@ -3,12 +3,13 @@
 #include "debug.h"
 #include "delay.h"
 #include <eth_driver.h>
-#include "eth_queue.h"
+#include <eth_queue.h>
+#include <eth.h>
+
+unsigned char MACAddr[6];
 
 volatile unsigned int timeCnt;
 volatile unsigned int timer_interrupt;
-
-unsigned char MACAddr[6];
 
 /*********************************************************************
  * @fn      ETH_IRQHandler
@@ -99,7 +100,13 @@ void TIM2_Init( void )
   }
 }*/
 
-void HalInit(void)
+static void RNG_Init(void)
+{
+  RCC_AHBPeriphClockCmd(RCC_AHBPeriph_RNG, ENABLE);
+  RNG_Cmd(ENABLE);
+}
+
+void HalInit(const unsigned char* ntp_server_address)
 {
   //Configure_Memory_Split();
 
@@ -112,8 +119,10 @@ void HalInit(void)
 
   GPIOInit();
   TIM2_Init();
+  RNG_Init();
 
   ETH_QueueInit();
   WCHNET_GetMacAddr(MACAddr);
+  ETH_Common_Init(MACAddr, ntp_server_address, nullptr, false);
   ETH_Init(MACAddr);
 }
