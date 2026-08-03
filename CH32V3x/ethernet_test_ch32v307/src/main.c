@@ -50,13 +50,14 @@ int putss(const char *s)
 void eth_set_prefix_callback(void)
 {
   if (!ntp_time_is_set)
-    ETH_NTP_Send_Timestamp_Request();
+    ETH_NTP_Send_Timestamp_Request(eth_instance.ntp_server_address, &eth_irq_queue);
   LED_BLUE_ON;
 }
 
 void ntp_time_received_callback(unsigned int unix_time)
 {
-  ETH_Printf("Unix time from a NTP server is %u\n", unix_time);
+  if (eth_instance.log_level >= ETH_LOGLEVEL_INFO)
+    ETH_Printf("Unix time from a NTP server is %u\n", unix_time);
   LED_RED_ON;
 }
 

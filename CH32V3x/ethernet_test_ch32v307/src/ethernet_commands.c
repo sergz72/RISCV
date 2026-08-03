@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "eth_ntp.h"
 #include "eth_queue.h"
 
 static int udp_send_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
@@ -29,6 +30,17 @@ static const ShellCommand ns_command = {
   ns_command_items,
   "ns",
   "ns address"
+};
+
+static int ntp_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem ntp_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, ntp_handler}
+};
+static const ShellCommand ntp_command = {
+  ntp_command_items,
+  "ntp",
+  "ntp address"
 };
 
 static int udp_send_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
@@ -68,8 +80,23 @@ static int ns_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv,
   return 0;
 }
 
+static int ntp_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  unsigned char address[16];
+
+  int rc = ETH_Parse_IPV6(argv[0], address);
+  if (rc)
+  {
+    pfunc("Incorrect address\n");
+    return rc;
+  }
+  ETH_NTP_Send_Timestamp_Request(address, &eth_user_queue);
+  return 0;
+}
+
 void register_ethernet_commands(void)
 {
   shell_register_command(&udp_send_command);
   shell_register_command(&ns_command);
+  shell_register_command(&ntp_command);
 }
