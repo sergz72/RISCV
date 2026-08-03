@@ -2,8 +2,8 @@
 * File Name          : startup_ch32v30x_D8.s
 * Author             : WCH
 * Version            : V1.0.2
-* Date               : 2025/03/06
-* Description        : CH32V303x vector table for eclipse toolchain.
+* Date               : 2025/10/21
+* Description        : CH32V303x Startup File
 *********************************************************************************
 * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
 * Attention: This software (modified or not) and binary are used for 
