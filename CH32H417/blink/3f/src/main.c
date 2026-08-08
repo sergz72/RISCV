@@ -3,15 +3,14 @@
 #include <core_riscv.h>
 #include <debug.h>
 
+#define EVAL
+
+#ifdef NANO
 #define LED1_PORT GPIOC
 #define LED1_PIN  GPIO_Pin_2
-#define LED1_OFF  LED1_PORT->BSHR = LED1_PIN
-#define LED1_ON   LED1_PORT->BCR  = LED1_PIN
 
 #define LED2_PORT GPIOC
 #define LED2_PIN  GPIO_Pin_3
-#define LED2_OFF  LED2_PORT->BSHR = LED2_PIN
-#define LED2_ON   LED2_PORT->BCR  = LED2_PIN
 
 #define LCD_DC_PORT GPIOD
 #define LCD_DC_PIN  GPIO_Pin_9
@@ -40,6 +39,22 @@
 
 #define LED_CLOCK_ENABLE RCC_HB2PeriphClockCmd(RCC_HB2Periph_GPIOC, ENABLE)
 #define LCD_CLOCK_ENABLE RCC_HB2PeriphClockCmd(RCC_HB2Periph_GPIOB|RCC_HB2Periph_GPIOD, ENABLE)
+#endif
+#ifdef EVAL
+#define LED1_PORT GPIOE
+#define LED1_PIN  GPIO_Pin_2
+
+#define LED2_PORT GPIOE
+#define LED2_PIN  GPIO_Pin_3
+
+#define LED_CLOCK_ENABLE RCC_HB2PeriphClockCmd(RCC_HB2Periph_GPIOE, ENABLE)
+#endif
+
+#define LED1_OFF  LED1_PORT->BSHR = LED1_PIN
+#define LED1_ON   LED1_PORT->BCR  = LED1_PIN
+
+#define LED2_OFF  LED2_PORT->BSHR = LED2_PIN
+#define LED2_ON   LED2_PORT->BCR  = LED2_PIN
 
 void GPIOInit(void)
 {
@@ -59,6 +74,7 @@ void GPIOInit(void)
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Low;
   GPIO_Init(LED2_PORT, &GPIO_InitStructure);
 
+#ifdef NANO
   LCD_CLOCK_ENABLE;
 
   GPIO_InitStructure.GPIO_Pin = LCD_DC_PIN;
@@ -86,6 +102,7 @@ void GPIOInit(void)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Very_High;
   GPIO_Init(LCD_RST_PORT, &GPIO_InitStructure);
+#endif
 }
 
 /*********************************************************************
