@@ -1,0 +1,4 @@
+#ifndef _GD32VW553_EXCEPTIONS_H
+#define _GD32VW553_EXCEPTIONS_H
+
+#endif

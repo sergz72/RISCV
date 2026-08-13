@@ -21,10 +21,6 @@
 
 #include "gd32vw55x.h"
 
-extern void nmi_handler(unsigned long mcause, unsigned long sp);
-extern void Exception_Init(void);
-extern void Exception_Register_EXC(uint32_t EXCn, unsigned long exc_handler);
-
 /**
  * \brief early init function before main
  * \details
