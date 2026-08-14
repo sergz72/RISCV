@@ -22,9 +22,10 @@ project(szos_gd32vw553 C ASM)
 file(GLOB SOURCES
         "src/main.c"
         "src/hal.c"
-        "src/exceptions.c"
+        "src/exceptions_new.c"
         "src/pmp.c"
         "src/system_commands.c"
+        "src/entry.S"
         "../../../common_lib/shell/shell.c"
         "../../../common_lib/fixed_queue.c"
         "../../../common_lib/getstring.c"

@@ -86,4 +86,6 @@ void puts_(const char *s)
 void __attribute__((noreturn)) reboot(void)
 {
   eclic_system_reset();
+  while (1)
+    __WFI();
 }

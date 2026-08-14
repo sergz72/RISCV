@@ -1,5 +1,4 @@
 #include "board.h"
-#include "exceptions.h"
 #include <common_printf.h>
 
 void nmi_handler(unsigned long mcause, unsigned long sp)

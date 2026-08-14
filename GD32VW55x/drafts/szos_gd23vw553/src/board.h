@@ -33,6 +33,8 @@
 #define RX_BUF_LEN           256
 #define PRINTF_BUFFER_LENGTH 200
 
+#define MAX_TASKS 8
+
 void HalInit(void);
 void __attribute__((noreturn)) reboot(void);
 

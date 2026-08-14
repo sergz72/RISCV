@@ -53,6 +53,14 @@ static void trigger_ecall_exception(void)
   __ASM volatile("ecall");
 }
 
+static void trigger_task_switch(void)
+{
+  __ASM volatile("mv a7, zero");
+  __ASM volatile("ecall");
+  __ASM volatile("li a7, 1");
+  __ASM volatile("ecall");
+}
+
 static int call(bool user_mode, void (*f)(void))
 {
   if (user_mode)
@@ -77,6 +85,8 @@ static int test_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
     case 2:
       if (!strcmp(argv[1], "ii"))
         return call(user_mode, trigger_illegal_instruction_exception);
+      if (!strcmp(argv[1], "sw"))
+        return call(user_mode, trigger_task_switch);
       break;
     case 5:
       if (!strcmp(argv[1], "ecall"))
@@ -85,7 +95,7 @@ static int test_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
     default:
       break;
   }
-  pfunc("Unknown test parameter %s - please specify ii or ecall\r\n", argv[1]);
+  pfunc("Unknown test parameter %s - please specify ii or sw or ecall\r\n", argv[1]);
   return 1;
 }
 
