@@ -1,14 +1,19 @@
 /********************************** (C) COPYRIGHT  *******************************
 * File Name          : debug.c
 * Author             : WCH
-* Version            : V1.0.0
-* Date               : 2021/06/06
+* Version            : V1.0.1
+* Date               : 2026/07/10
 * Description        : This file contains all the functions prototypes for UART
 *                      Printf , Delay functions.
+*********************************************************************************
 * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
-* SPDX-License-Identifier: Apache-2.0
+* Attention: This software (modified or not) and binary are used for 
+* microcontroller manufactured by Nanjing Qinheng Microelectronics.
 *******************************************************************************/
 #include "debug.h"
+
+#define DEBUG_DATA0_ADDRESS  ((volatile uint32_t*)0xE0000380)
+#define DEBUG_DATA1_ADDRESS  ((volatile uint32_t*)0xE0000384)
 
 /*********************************************************************
  * @fn      USART_Printf_Init
@@ -75,6 +80,22 @@ void USART_Printf_Init(uint32_t baudrate)
 }
 
 /*********************************************************************
+ * @fn      SDI_Printf_Enable
+ *
+ * @brief   Initializes the SDI printf Function.
+ *
+ * @param   None
+ *
+ * @return  None
+ */
+void SDI_Printf_Enable(void)
+{
+    *(DEBUG_DATA0_ADDRESS) = 0;
+    Delay_Init();
+    Delay_Ms(1);
+}
+
+/*********************************************************************
  * @fn      _write
  *
  * @brief   Support Printf Function
@@ -86,8 +107,57 @@ void USART_Printf_Init(uint32_t baudrate)
  */
 __attribute__((used)) int _write(int fd, char *buf, int size)
 {
-    int i;
+    int i = 0;
+#if (SDI_PRINT == SDI_PR_OPEN)
+    int writeSize = size;
+    do
+    {
 
+        /**
+         * data0 + data1 = 8 bytes
+         * data0 The lowest byte storage length, the maximum is 7
+         *
+         */
+
+        while( (*(DEBUG_DATA0_ADDRESS) != 0u))
+        {
+
+        }
+
+        if(writeSize>7)
+        {
+            *(DEBUG_DATA1_ADDRESS) =      \
+              ((uint8_t)(buf[i+3])) |     \
+              ((uint8_t)(buf[i+4]) << 8) |  \
+              ((uint8_t)(buf[i+5]) << 16) | \
+              ((uint8_t)(buf[i+6]) << 24);
+            *(DEBUG_DATA0_ADDRESS) =      \
+              (7u) |                      \
+              ((uint8_t)(buf[i]) << 8) |    \
+              ((uint8_t)(buf[i+1]) << 16) | \
+              ((uint8_t)(buf[i+2]) << 24);   
+
+            i += 7;
+            writeSize -= 7;
+        }
+        else
+        {
+            uint8_t tmp = (uint8_t)writeSize;
+            *(DEBUG_DATA1_ADDRESS) =                       \
+                ((tmp > 3 ? (uint8_t)buf[i+3] : 0)) |      \
+                ((tmp > 4 ? (uint8_t)buf[i+4] : 0) << 8) | \
+                ((tmp > 5 ? (uint8_t)buf[i+5] : 0) << 16) |\
+                ((tmp > 6 ? (uint8_t)buf[i+6] : 0) << 24);
+            *(DEBUG_DATA0_ADDRESS) = 
+                (tmp) | ((uint8_t)buf[i] << 8) |           \
+                ((tmp > 1 ? (uint8_t)buf[i+1] : 0) << 16) |\
+                ((tmp > 2 ? (uint8_t)buf[i+2] : 0) << 24);
+            writeSize = 0;
+        }
+
+    } while (writeSize);
+    
+#else
     for(i = 0; i < size; i++)
     {
 #if(DEBUG == DEBUG_UART1)
@@ -101,7 +171,7 @@ __attribute__((used)) int _write(int fd, char *buf, int size)
         USART_SendData(USART3, *buf++);
 #endif
     }
-
+#endif
     return size;
 }
 
@@ -112,7 +182,7 @@ __attribute__((used)) int _write(int fd, char *buf, int size)
  *
  * @return  size: Data length
  */
-void *_sbrk(ptrdiff_t incr)
+__attribute__((used)) void *_sbrk(ptrdiff_t incr)
 {
     extern char _end[];
     extern char _heap_end[];
@@ -125,6 +195,5 @@ void *_sbrk(ptrdiff_t incr)
     return curbrk - incr;
 }
 
-void _fini(){}
-void _init(){}
+
 
