@@ -1,19 +1,24 @@
-.global osExit,osDelay,osLeds
+.global osTaskSwitch,osExit,osDelay,osLeds
 
 .section .text
 
-osExit:
+osTaskSwitch:
   li a7, 0
+  ecall
+  ret
+
+osExit:
+  li a7, 1
   ecall
 loop:
   j loop
 
 osDelay:
-  li a7, 1
+  li a7, 2
   ecall
   ret
 
 osLeds:
-  li a7, 2
+  li a7, 3
   ecall
   ret

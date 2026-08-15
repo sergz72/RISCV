@@ -22,8 +22,9 @@ project(szos_gd32vw553 C ASM)
 file(GLOB SOURCES
         "src/main.c"
         "src/hal.c"
-        "src/exceptions_new.c"
+        "src/exceptions.c"
         "src/pmp.c"
+        "src/sys_timer.c"
         "src/system_commands.c"
         "src/entry.S"
         "../../../common_lib/shell/shell.c"
@@ -38,7 +39,6 @@ file(GLOB SOURCES
         "../lib/Source/gd32vw55x_gpio.c"
         "../lib/Source/gd32vw55x_rcu.c"
         "../lib/Source/gd32vw55x_usart.c"
-        "../lib/systick.c"
 )
 
 include_directories(src .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell)

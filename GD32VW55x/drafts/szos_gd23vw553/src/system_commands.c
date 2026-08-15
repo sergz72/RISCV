@@ -2,6 +2,7 @@
 #include "system_commands.h"
 #include <shell.h>
 #include <string.h>
+#include <getstring.h>
 #include "pmp.h"
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
@@ -26,6 +27,19 @@ static const ShellCommand test_command = {
   test_command_items,
   "test",
   "test parameters",
+  nullptr,
+  nullptr
+};
+
+static int echo_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem echo_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, echo_handler}
+};
+static const ShellCommand echo_command = {
+  echo_command_items,
+  "echo",
+  "echo on|off",
   nullptr,
   nullptr
 };
@@ -99,9 +113,24 @@ static int test_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   return 1;
 }
 
+static int echo_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  if (!strcmp(argv[0], "on"))
+    getstring_echo(true);
+  else if (!strcmp(argv[0], "off"))
+    getstring_echo(false);
+  else
+  {
+    pfunc("Unknown echo parameter %s - please specify on or off\r\n", argv[0]);
+    return 1;
+  }
+  return 0;
+}
+
 void register_system_commands(void)
 {
   pmp_init();
   shell_register_command(&reboot_command);
   shell_register_command(&test_command);
+  shell_register_command(&echo_command);
 }

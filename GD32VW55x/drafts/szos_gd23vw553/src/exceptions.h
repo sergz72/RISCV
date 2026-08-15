@@ -1,0 +1,6 @@
+#ifndef _EXCEPTIONS_H
+#define _EXCEPTIONS_H
+
+#define EXCEPTION_STACK_SIZE 1024
+
+#endif

@@ -1,9 +1,9 @@
 #include "board.h"
-#include <systick.h>
 #include <shell.h>
 #include <getstring.h>
 #include <common_printf.h>
 #include "system_commands.h"
+#include "sys_timer.h"
 
 unsigned char rx_buffer[RX_BUF_LEN];
 unsigned char *rx_buffer_write_p, *rx_buffer_read_p;
@@ -37,7 +37,7 @@ int main(void)
 
   while(1)
   {
-    delay_1ms(100);
+    delayms(100);
     led_state = !led_state;
     if (led_state)
       LED_TIMER_ON;
@@ -58,11 +58,13 @@ int main(void)
       default:
         rc = shell_execute(command_line);
         if (rc == 0)
-          puts_("OK\r\n$ ");
+          puts_("OK\r\n");
         else if (rc < 0)
-          puts_("Invalid command line\r\n$ ");
+          puts_("Invalid command line\r\n");
         else
-          common_printf("shell_execute returned %d\n$ ", rc);
+          common_printf("shell_execute returned %d\n", rc);
+        if (getstring_get_echo())
+          puts_("$ ");
         break;
       }
     }

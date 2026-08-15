@@ -1,19 +1,28 @@
+#include "exceptions.h"
+
 .section .text.trap
 /* In CLIC mode, the exeception entry must be 64bytes aligned */
 .align 6
 .global exc_entry
 exc_entry:
-  csrrw sp, mscratch, sp
-  addi sp, sp, -8
-  sw   x5, 8(sp)
-  sw   x6, 4(sp)
+  csrw mscratch, sp
+  la sp, exception_stack + EXCEPTION_STACK_SIZE * 4 - 16
+  //addi sp, sp, -8
+  sw   x5, 12(sp)
+  csrr x5, mstatus
+  sw x5, 8(sp)
+  csrr x5, mepc
+  sw x5, 4(sp)
+  csrsi mstatus, 8 // enable interrupts
+  sw   x6, 0(sp)
   li   x5, 8 //UmodeEcall_EXCn
   csrr x6, mcause
   andi x6, x6, 0x7FF
   bne  x5, x6, exc_other
   beq  a7, zero, exc_other // task switch ecall
-  addi sp, sp, 8
+  addi sp, sp, 16
   jal  ecall_handler
+  csrr sp, mscratch
   mret
 exc_other:
   la x5, current_task_data
@@ -25,11 +34,10 @@ exc_other:
   sw x6, 8(x5)      // sp
   sw x3, 12(x5)
   sw x4, 16(x5)
-  lw x1, 8(sp)  // x5
+  lw x1, 12(sp)  // x5
   sw x1, 20(x5) // x5
-  lw x1, 4(sp)  // x6
+  lw x1, 0(sp)  // x6
   sw x1, 24(x5) // x6
-  addi sp, sp, 8
   sw x7, 28(x5)
 
   sw x8, 32(x5)
@@ -59,19 +67,28 @@ exc_other:
   sw x30, 120(x5)
   sw x31, 124(x5)
 
-  csrr x6, mepc
+  lw x6, 4(sp) // mepc
   sw x6, 128(x5)
+  lw x6, 8(sp) // mstatus
+  sw x6, 132(x5)
+  addi sp, sp, 16
 
   jal  exc_handler
+
+  csrci mstatus, 8 // disable interrupts
 
   la x5, current_task_data
   lw x5, 0(x5)
 
-  csrr x6, mepc
+  lw x6, 132(x5)
+  csrw mstatus, x6
+
+  lw x6, 128(x5)
   addi x6, x6, 4
   csrw mepc, x6
 
   lw x1, 4(x5)
+  lw x2, 8(x5)
   lw x3, 12(x5)
   lw x4, 16(x5)
   lw x6, 24(x5)
@@ -105,6 +122,5 @@ exc_other:
   lw x31, 124(x5)
 
   lw x5, 16(x5)
-  csrrw sp, mscratch, sp
 
   mret

@@ -1,5 +1,5 @@
 #include "board.h"
-#include <systick.h>
+#include "sys_timer.h"
 
 static void GPIOInit(void)
 {
@@ -48,15 +48,9 @@ void USARTInit(void)
 
 void HalInit(void)
 {
-  systick_config();
+  sys_timer_init();
   GPIOInit();
   USARTInit();
-}
-
-void eclic_mtip_handler(void)
-{
-  ECLIC_ClearPendingIRQ(CLIC_INT_TMR);
-  delay_decrement();
 }
 
 void USART_IRQHandler(void)
@@ -81,6 +75,8 @@ void puts_(const char *s)
 {
   while (*s)
     usart_transmit(*s++);
+  while(RESET == usart_flag_get(USART_INST, USART_FLAG_TBE))
+    ;
 }
 
 void __attribute__((noreturn)) reboot(void)
