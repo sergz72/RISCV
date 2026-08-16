@@ -4,6 +4,8 @@
 #include <string.h>
 #include <getstring.h>
 #include "pmp.h"
+#include <malloc.h>
+#include <stdlib.h>
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
 static const ShellCommandItem reboot_command_items[] = {
@@ -13,6 +15,19 @@ static const ShellCommand reboot_command = {
   reboot_command_items,
   "reboot",
   "reboot",
+  nullptr,
+  nullptr
+};
+
+static int memalloc_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem memalloc_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, memalloc_handler}
+};
+static const ShellCommand memalloc_command = {
+  memalloc_command_items,
+  "memalloc",
+  "memalloc bytes",
   nullptr,
   nullptr
 };
@@ -127,10 +142,33 @@ static int echo_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   return 0;
 }
 
+static int memalloc_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  int bytes = atoi(argv[0]);
+  if (bytes < 0)
+  {
+    pfunc("Incorrect number of bytes");
+    return 1;
+  }
+  if (bytes != 0)
+  {
+    void *p = malloc(bytes);
+    pfunc("Allocated pointer %08X\r\n", p);
+    free(p);
+  }
+  struct mallinfo mi = mallinfo();
+  pfunc("Total space allocated from system: %d bytes\r\n", mi.arena);
+  pfunc("Total allocated space: %d bytes\r\n", mi.uordblks);
+  pfunc("Total free space: %d bytes\r\n", mi.fordblks);
+  pfunc("Number of mmapped regions: %d\r\n", mi.hblks);
+  return 0;
+}
+
 void register_system_commands(void)
 {
   pmp_init();
   shell_register_command(&reboot_command);
   shell_register_command(&test_command);
   shell_register_command(&echo_command);
+  shell_register_command(&memalloc_command);
 }

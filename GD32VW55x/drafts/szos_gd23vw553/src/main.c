@@ -1,9 +1,12 @@
 #include "board.h"
 #include <shell.h>
 #include <getstring.h>
-#include <common_printf.h>
+//#include <common_printf.h>
+#include <stdio.h>
 #include "system_commands.h"
+#include "fs_commands.h"
 #include "sys_timer.h"
+#include "fs.h"
 
 unsigned char rx_buffer[RX_BUF_LEN];
 unsigned char *rx_buffer_write_p, *rx_buffer_read_p;
@@ -21,6 +24,8 @@ static int getch_(void)
   return EOF;
 }
 
+void puts_(const char *s);
+
 int main(void)
 {
   int rc;
@@ -30,8 +35,16 @@ int main(void)
 
   HalInit();
 
-  shell_init(common_printf, nullptr);
+  if (fs_init())
+  {
+    LED_TIMER_ON;
+    while (1)
+      __WFI();
+  }
+
+  shell_init(PRINTF, nullptr);
   register_system_commands();
+  register_fs_commands();
 
   getstring_init(command_line, sizeof(command_line), getch_, puts_);
 
@@ -48,23 +61,23 @@ int main(void)
       switch (command_line[0])
       {
       case SHELL_UP_KEY:
-        puts_("\r\33[2K$ ");
+        PUTS("\r\33[2K$ ");
         getstring_buffer_init(shell_get_prev_from_history());
         break;
       case SHELL_DOWN_KEY:
-        puts_("\r\33[2K$ ");
+        PUTS("\r\33[2K$ ");
         getstring_buffer_init(shell_get_next_from_history());
         break;
       default:
         rc = shell_execute(command_line);
         if (rc == 0)
-          puts_("OK\r\n");
+          PUTS("OK\r\n");
         else if (rc < 0)
-          puts_("Invalid command line\r\n");
+          PUTS("Invalid command line\r\n");
         else
-          common_printf("shell_execute returned %d\n", rc);
+          PRINTF("shell_execute returned %d\n", rc);
         if (getstring_get_echo())
-          puts_("$ ");
+          PUTS("$ ");
         break;
       }
     }

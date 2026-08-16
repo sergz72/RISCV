@@ -1,0 +1,8 @@
+#ifndef SZOS_GD32VW553_GD32VW553H_EVAL_H
+#define SZOS_GD32VW553_GD32VW553H_EVAL_H
+
+#include "board.h"
+
+#define EVAL_COM0 USART_INST
+
+#endif

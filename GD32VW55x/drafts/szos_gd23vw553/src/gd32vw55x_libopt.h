@@ -7,6 +7,7 @@
 #include "gd32vw55x_rcu.h"
 #include "gd32vw55x_eclic.h"
 #include "gd32vw55x_usart.h"
+#include "gd32vw55x_fmc.h"
 #include <handlers.h>
 
 #endif

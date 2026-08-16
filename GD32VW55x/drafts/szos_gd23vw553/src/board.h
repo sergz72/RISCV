@@ -33,7 +33,13 @@
 #define RX_BUF_LEN           256
 #define PRINTF_BUFFER_LENGTH 200
 
+#define PRINTF printf
+#define PUTS   puts
+
 #define MAX_TASKS 8
+
+#define FLASH_BASE_ADDR    0x08300000
+#define FLASH_STORAGE_SIZE (1024*1024)
 
 void HalInit(void);
 void __attribute__((noreturn)) reboot(void);

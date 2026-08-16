@@ -26,11 +26,15 @@ file(GLOB SOURCES
         "src/pmp.c"
         "src/sys_timer.c"
         "src/system_commands.c"
+        "src/fs_commands.c"
         "src/entry.S"
+        "src/fs.c"
+        "src/fs_lfs.c"
+        "src/storage_internal_flash.c"
         "../../../common_lib/shell/shell.c"
         "../../../common_lib/fixed_queue.c"
         "../../../common_lib/getstring.c"
-        "../../../common_lib/common_printf.c"
+#        "../../../common_lib/common_printf.c"
         "../start.S"
         "../entry.S"
         "../init.c"
@@ -39,9 +43,20 @@ file(GLOB SOURCES
         "../lib/Source/gd32vw55x_gpio.c"
         "../lib/Source/gd32vw55x_rcu.c"
         "../lib/Source/gd32vw55x_usart.c"
+        "../lib/Source/gd32vw55x_fmc.c"
+        "../lib/stubs/sbrk.c"
+        "../lib/stubs/close.c"
+        "../lib/stubs/fstat.c"
+        "../lib/stubs/isatty.c"
+        "../lib/stubs/lseek.c"
+        "../lib/stubs/read.c"
+        "../lib/stubs/write.c"
+        "../../../fs/littlefs/lfs.c"
+        "../../../fs/littlefs/lfs_util.c"
 )
 
-include_directories(src .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell)
+include_directories(src .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell
+        ../../../fs/littlefs)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
