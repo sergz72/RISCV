@@ -87,6 +87,46 @@ static const ShellCommand rename_command = {
   nullptr
 };
 
+static int cat_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem cat_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, cat_handler}
+};
+static const ShellCommand cat_command = {
+  cat_command_items,
+  "cat",
+  "cat path",
+  nullptr,
+  nullptr
+};
+
+static int truncate_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem truncate_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, truncate_handler}
+};
+static const ShellCommand truncate_command = {
+  truncate_command_items,
+  "truncate",
+  "truncate path",
+  nullptr,
+  nullptr
+};
+
+static int puts_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem puts_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, puts_handler}
+};
+static const ShellCommand puts_command = {
+  puts_command_items,
+  "puts",
+  "puts path text",
+  nullptr,
+  nullptr
+};
+
 static const storage_t *get_storage(printf_func pfunc, int argc, const char *inpath, const char **outpath)
 {
   const char *path;
@@ -156,7 +196,7 @@ static int rename_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
   const storage_t *storage1 = get_storage(pfunc, argc, argv[0], &outpath1);
   if (storage1 == nullptr)
     return 1;
-  const char *p1 = strdup(outpath1);
+  char *p1 = strdup(outpath1);
   if (p1 == nullptr)
     return 2;
   const char *outpath2;
@@ -196,6 +236,74 @@ static int cd_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv,
   return 0;
 }
 
+static int cat_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "r");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for read\r\n");
+    return 1;
+  }
+  int size;
+  for (;;)
+  {
+    size = storage->fs_operations->fread(storage->fs_context, temp_path, sizeof(temp_path) - 1, 1, f);
+    if (size <= 0)
+      break;
+    temp_path[size] = 0;
+    pfunc("%s", temp_path);
+  }
+  storage->fs_operations->fclose(storage->fs_context, f);
+  return -size;
+}
+
+static int truncate_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "w");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for write\r\n");
+    return 1;
+  }
+  int rc = storage->fs_operations->truncate(storage->fs_context, f, 0);
+  storage->fs_operations->fclose(storage->fs_context, f);
+  return rc;
+}
+
+static int puts_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "a");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for append\r\n");
+    return 1;
+  }
+  size_t l = strlen(argv[1]);
+  int rc = 0;
+  if (l != 0)
+  {
+    strcpy(temp_path, argv[0]);
+    temp_path[l++] = '\n';
+    temp_path[l] = 0;
+    rc = storage->fs_operations->fwrite(storage->fs_context, argv[1], l, 1, f);
+  }
+
+  storage->fs_operations->fclose(storage->fs_context, f);
+  return rc;
+}
+
 void register_fs_commands(void)
 {
   cwd[0] = '/';
@@ -206,4 +314,7 @@ void register_fs_commands(void)
   shell_register_command(&mkdir_command);
   shell_register_command(&rmdir_command);
   shell_register_command(&rename_command);
+  shell_register_command(&cat_command);
+  shell_register_command(&truncate_command);
+  shell_register_command(&puts_command);
 }
