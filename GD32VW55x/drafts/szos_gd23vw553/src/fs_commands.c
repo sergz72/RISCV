@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "fs.h"
 #include "storage.h"
+#include <base64.h>
+#include <crc32.h>
 
 static char cwd[256];
 static char temp_path[256];
@@ -127,6 +129,73 @@ static const ShellCommand puts_command = {
   nullptr
 };
 
+static int fopen_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fopen_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, fopen_handler}
+};
+static const ShellCommand fopen_command = {
+  fopen_command_items,
+  "fopen",
+  "fopen path",
+  nullptr,
+  nullptr
+};
+
+static int fwrite_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fwrite_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, fwrite_handler}
+};
+static const ShellCommand fwrite_command = {
+  fwrite_command_items,
+  "fwrite",
+  "fwrite data_base64",
+  nullptr,
+  nullptr
+};
+
+static int fclose_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fclose_command_items[] = {
+  {nullptr, nullptr, fclose_handler}
+};
+static const ShellCommand fclose_command = {
+  fclose_command_items,
+  "fclose",
+  "fclose",
+  nullptr,
+  nullptr
+};
+
+static int fcrc32_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fcrc32_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, fcrc32_handler}
+};
+static const ShellCommand fcrc32_command = {
+  fcrc32_command_items,
+  "fcrc32",
+  "fcrc32 path",
+  nullptr,
+  nullptr
+};
+
+static int rm_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem rm_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, rm_handler}
+};
+static const ShellCommand rm_command = {
+  rm_command_items,
+  "rm",
+  "rm path",
+  nullptr,
+  nullptr
+};
+
+const storage_t *current_storage;
+void *current_file;
+
 static const storage_t *get_storage(printf_func pfunc, int argc, const char *inpath, const char **outpath)
 {
   const char *path;
@@ -188,6 +257,15 @@ static int rmdir_handler(printf_func pfunc, gets_func gfunc, int argc, char **ar
   if (storage == nullptr)
     return 1;
   return storage->fs_operations->rmdir(storage->fs_context, outpath);
+}
+
+static int rm_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  return storage->fs_operations->remove(storage->fs_context, outpath);
 }
 
 static int rename_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
@@ -256,6 +334,11 @@ static int cat_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
       break;
     temp_path[size] = 0;
     pfunc("%s", temp_path);
+    if (size < sizeof(temp_path) - 1)
+    {
+      size = 0;
+      break;
+    }
   }
   storage->fs_operations->fclose(storage->fs_context, f);
   return -size;
@@ -304,17 +387,93 @@ static int puts_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   return rc < l ? 1 : 0;
 }
 
+static int fopen_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  if (current_file)
+    return 1;
+  const char *outpath;
+  current_storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (current_storage == nullptr)
+    return 2;
+  current_file = current_storage->fs_operations->fopen(current_storage->fs_context, outpath, "w");
+  if (current_file == nullptr)
+  {
+    current_storage = nullptr;
+    pfunc("Failed to open file for write\n");
+    return 3;
+  }
+  return 0;
+}
+
+static int fwrite_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  if (current_file == nullptr || current_storage == nullptr)
+    return 1;
+
+  unsigned int l = base64decode(argv[0], strlen(argv[0]), temp_path);
+  int rc = current_storage->fs_operations->fwrite(current_storage->fs_context, temp_path, l, 1, current_file);
+  return rc < l ? 2 : 0;
+}
+
+static int fclose_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  if (current_file == nullptr || current_storage == nullptr)
+    return 1;
+  current_storage->fs_operations->fclose(current_storage->fs_context, current_file);
+  current_file = nullptr;
+  current_storage = nullptr;
+  return 0;
+}
+
+static int fcrc32_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "r");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for read\n");
+    return 1;
+  }
+  int size;
+  crc32_start();
+  for (;;)
+  {
+    size = storage->fs_operations->fread(storage->fs_context, temp_path, sizeof(temp_path) - 1, 1, f);
+    if (size <= 0)
+      break;
+    crc32_add(temp_path, size);
+    if (size < sizeof(temp_path) - 1)
+    {
+      size = 0;
+      break;
+    }
+  }
+  pfunc("%08x\n", crc32_end());
+  storage->fs_operations->fclose(storage->fs_context, f);
+  return -size;
+}
+
 void register_fs_commands(void)
 {
   cwd[0] = '/';
   cwd[1] = 0;
+  current_file = nullptr;
+  current_storage = nullptr;
   shell_register_command(&pwd_command);
   shell_register_command(&cd_command);
   shell_register_command(&ls_command);
   shell_register_command(&mkdir_command);
   shell_register_command(&rmdir_command);
+  shell_register_command(&rm_command);
   shell_register_command(&rename_command);
   shell_register_command(&cat_command);
   shell_register_command(&truncate_command);
   shell_register_command(&puts_command);
+  shell_register_command(&fopen_command);
+  shell_register_command(&fwrite_command);
+  shell_register_command(&fclose_command);
+  shell_register_command(&fcrc32_command);
 }

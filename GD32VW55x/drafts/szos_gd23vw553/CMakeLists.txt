@@ -37,6 +37,7 @@ file(GLOB SOURCES
         "../../../common_lib/common_printf.c"
         "../../../common_lib/crypto/trng_commands.c"
         "../../../common_lib/crypto/crc_commands.c"
+        "../../../common_lib/crypto/base64.c"
         "../start.S"
         "../entry.S"
         "../init.c"
