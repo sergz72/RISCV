@@ -8,6 +8,8 @@
 #include "gd32vw55x_eclic.h"
 #include "gd32vw55x_usart.h"
 #include "gd32vw55x_fmc.h"
+#include "gd32vw55x_trng.h"
+#include "gd32vw55x_crc.h"
 #include <handlers.h>
 
 #endif

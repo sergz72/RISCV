@@ -34,16 +34,22 @@ file(GLOB SOURCES
         "../../../common_lib/shell/shell.c"
         "../../../common_lib/fixed_queue.c"
         "../../../common_lib/getstring.c"
-#        "../../../common_lib/common_printf.c"
+        "../../../common_lib/common_printf.c"
+        "../../../common_lib/crypto/trng_commands.c"
+        "../../../common_lib/crypto/crc_commands.c"
         "../start.S"
         "../entry.S"
         "../init.c"
         "../lib/system_gd32vw55x.c"
+        "../lib/crc32.c"
+        "../lib/trng.c"
         "../lib/Source/gd32vw55x_eclic.c"
         "../lib/Source/gd32vw55x_gpio.c"
         "../lib/Source/gd32vw55x_rcu.c"
         "../lib/Source/gd32vw55x_usart.c"
         "../lib/Source/gd32vw55x_fmc.c"
+        "../lib/Source/gd32vw55x_trng.c"
+        "../lib/Source/gd32vw55x_crc.c"
         "../lib/stubs/sbrk.c"
         "../lib/stubs/close.c"
         "../lib/stubs/fstat.c"
@@ -56,7 +62,7 @@ file(GLOB SOURCES
 )
 
 include_directories(src .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell
-        ../../../fs/littlefs)
+        ../../../common_lib/crypto ../../../fs/littlefs)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

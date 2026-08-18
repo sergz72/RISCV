@@ -166,7 +166,7 @@ static int ls_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv,
     struct dirent *de = storage->fs_operations->readdir(storage->fs_context, dir);
     if (de == nullptr)
       break;
-    pfunc("%s %40s %7d\r\n", de->type == DT_DIR ? "dir" : "file", de->name, de->size);
+    pfunc("%s %40s %7d\n", de->type == DT_DIR ? "dir " : "file", de->name, de->size);
   }
   storage->fs_operations->closedir(storage->fs_context, dir);
   return 0;
@@ -219,7 +219,7 @@ static int rename_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
 
 static int pwd_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
 {
-  pfunc("%s\r\n", cwd);
+  pfunc("%s\n", cwd);
   return 0;
 }
 
@@ -245,7 +245,7 @@ static int cat_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
   void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "r");
   if (f == nullptr)
   {
-    pfunc("Failed to open file for read\r\n");
+    pfunc("Failed to open file for read\n");
     return 1;
   }
   int size;
@@ -270,7 +270,7 @@ static int truncate_handler(printf_func pfunc, gets_func gfunc, int argc, char *
   void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "w");
   if (f == nullptr)
   {
-    pfunc("Failed to open file for write\r\n");
+    pfunc("Failed to open file for write\n");
     return 1;
   }
   int rc = storage->fs_operations->truncate(storage->fs_context, f, 0);
@@ -287,21 +287,21 @@ static int puts_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "a");
   if (f == nullptr)
   {
-    pfunc("Failed to open file for append\r\n");
+    pfunc("Failed to open file for append\n");
     return 1;
   }
   size_t l = strlen(argv[1]);
   int rc = 0;
   if (l != 0)
   {
-    strcpy(temp_path, argv[0]);
+    strcpy(temp_path, argv[1]);
     temp_path[l++] = '\n';
     temp_path[l] = 0;
-    rc = storage->fs_operations->fwrite(storage->fs_context, argv[1], l, 1, f);
+    rc = storage->fs_operations->fwrite(storage->fs_context, temp_path, l, 1, f);
   }
 
   storage->fs_operations->fclose(storage->fs_context, f);
-  return rc;
+  return rc < l ? 1 : 0;
 }
 
 void register_fs_commands(void)

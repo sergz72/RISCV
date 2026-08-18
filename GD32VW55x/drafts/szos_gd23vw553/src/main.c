@@ -1,12 +1,14 @@
 #include "board.h"
 #include <shell.h>
 #include <getstring.h>
-//#include <common_printf.h>
-#include <stdio.h>
+//#include <stdio.h>
+#include <common_printf.h>
 #include "system_commands.h"
 #include "fs_commands.h"
 #include "sys_timer.h"
 #include "fs.h"
+#include <trng_commands.h>
+#include <crc_commands.h>
 
 unsigned char rx_buffer[RX_BUF_LEN];
 unsigned char *rx_buffer_write_p, *rx_buffer_read_p;
@@ -45,6 +47,8 @@ int main(void)
   shell_init(PRINTF, nullptr);
   register_system_commands();
   register_fs_commands();
+  //register_trng_commands();
+  register_crc_commands();
 
   getstring_init(command_line, sizeof(command_line), getch_, puts_);
 
@@ -71,9 +75,9 @@ int main(void)
       default:
         rc = shell_execute(command_line);
         if (rc == 0)
-          PUTS("OK\r\n");
+          PUTS("OK\n");
         else if (rc < 0)
-          PUTS("Invalid command line\r\n");
+          PUTS("Invalid command line\n");
         else
           PRINTF("shell_execute returned %d\n", rc);
         if (getstring_get_echo())

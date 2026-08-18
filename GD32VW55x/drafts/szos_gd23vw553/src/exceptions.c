@@ -1,7 +1,7 @@
 #include "board.h"
 #include "exceptions.h"
-//#include <common_printf.h>
-#include <stdio.h>
+#include <common_printf.h>
+//#include <stdio.h>
 #include "sys_timer.h"
 
 typedef struct
@@ -23,7 +23,7 @@ unsigned int exception_stack[EXCEPTION_STACK_SIZE] __attribute__((aligned(16)));
 static void task_switch(void)
 {
   delayms(1000);
-  PUTS("Task switch\r\n");
+  PUTS("Task switch\n");
 }
 
 void exc_handler(void)
@@ -77,7 +77,7 @@ void exc_handler(void)
 
   CSR_MSTATUS_Type mstatus;
   mstatus.d = __RV_CSR_READ(CSR_MSTATUS);
-  PRINTF("\r\n%s exception from mode %d, mcause: 0x%x, mepc: 0x%x. Rebooting...\r\n", cause, mstatus.b.mpp, current_task_data->mcause, current_task_data->mepc);
+  PRINTF("\n%s exception from mode %d, mcause: 0x%x, mepc: 0x%x. Rebooting...\n", cause, mstatus.b.mpp, current_task_data->mcause, current_task_data->mepc);
   reboot();
 }
 
@@ -87,11 +87,11 @@ void ecall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned i
   switch (a7)
   {
     case 1:
-      PUTS("Task switch complete. Rebooting...\r\n");
+      PUTS("Task switch complete. Rebooting...\n");
       reboot();
       break;
     default:
-      PRINTF("Unknown environment call %x from U-mode. Rebooting...\r\n", a7);
+      PRINTF("Unknown environment call %x from U-mode. Rebooting...\n", a7);
       reboot();
   }
 }

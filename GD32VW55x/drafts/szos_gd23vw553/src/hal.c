@@ -1,5 +1,8 @@
 #include "board.h"
 #include "sys_timer.h"
+#include <trng.h>
+#include <crc32.h>
+#include <common_printf.h>
 
 static void GPIOInit(void)
 {
@@ -51,6 +54,8 @@ void HalInit(void)
   sys_timer_init();
   GPIOInit();
   USARTInit();
+  //trng_init();
+  crc32_init();
 }
 
 void USART_IRQHandler(void)
@@ -73,11 +78,22 @@ void usart_transmit(char c)
 
 void puts_(const char *s)
 {
-  while (*s)
-    usart_transmit(*s++);
+  for (;;)
+  {
+    char c = *s++;
+    if (!c)
+      break;
+    usart_transmit(c);
+    if (c == '\n')
+      usart_transmit('\r');
+  }
   while(RESET == usart_flag_get(USART_INST, USART_FLAG_TBE))
     ;
 }
+/*void puts_(const char *s)
+{
+  puts(s);
+}*/
 
 void __attribute__((noreturn)) reboot(void)
 {

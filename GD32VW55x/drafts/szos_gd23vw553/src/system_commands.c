@@ -67,7 +67,7 @@ uintptr_t umode_sp = (uintptr_t) (umode_stack + sizeof(umode_stack));
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
 {
-  pfunc("Rebooting...\r\n");
+  pfunc("Rebooting...\n");
   reboot();
 }
 
@@ -105,7 +105,7 @@ static int test_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
   bool user_mode = argv[0][0] == 'u';
   if (l != 1 || (!user_mode && argv[0][0] != 'm'))
   {
-    pfunc("Unknown CPU mode - please specify m or u\r\n");
+    pfunc("Unknown CPU mode - please specify m or u\n");
     return 1;
   }
   l = strlen(argv[1]);
@@ -124,7 +124,7 @@ static int test_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
     default:
       break;
   }
-  pfunc("Unknown test parameter %s - please specify ii or sw or ecall\r\n", argv[1]);
+  pfunc("Unknown test parameter %s - please specify ii or sw or ecall\n", argv[1]);
   return 1;
 }
 
@@ -136,7 +136,7 @@ static int echo_handler(printf_func pfunc, gets_func gfunc, int argc, char **arg
     getstring_echo(false);
   else
   {
-    pfunc("Unknown echo parameter %s - please specify on or off\r\n", argv[0]);
+    pfunc("Unknown echo parameter %s - please specify on or off\n", argv[0]);
     return 1;
   }
   return 0;
@@ -153,14 +153,14 @@ static int memalloc_handler(printf_func pfunc, gets_func gfunc, int argc, char *
   if (bytes != 0)
   {
     void *p = malloc(bytes);
-    pfunc("Allocated pointer %08X\r\n", p);
+    pfunc("Allocated pointer %08X\n", p);
     free(p);
   }
   struct mallinfo mi = mallinfo();
-  pfunc("Total space allocated from system: %d bytes\r\n", mi.arena);
-  pfunc("Total allocated space: %d bytes\r\n", mi.uordblks);
-  pfunc("Total free space: %d bytes\r\n", mi.fordblks);
-  pfunc("Number of mmapped regions: %d\r\n", mi.hblks);
+  pfunc("Total space allocated from system: %d bytes\n", mi.arena);
+  pfunc("Total allocated space: %d bytes\n", mi.uordblks);
+  pfunc("Total free space: %d bytes\n", mi.fordblks);
+  pfunc("Number of mmapped regions: %d\n", mi.hblks);
   return 0;
 }
 

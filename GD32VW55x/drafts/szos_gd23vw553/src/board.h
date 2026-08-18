@@ -33,8 +33,8 @@
 #define RX_BUF_LEN           256
 #define PRINTF_BUFFER_LENGTH 200
 
-#define PRINTF printf
-#define PUTS   puts
+#define PRINTF common_printf
+#define PUTS   puts_
 
 #define MAX_TASKS 8
 
