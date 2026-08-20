@@ -106,11 +106,33 @@ func (e *EShell) sendFileData(data []byte) error {
 }
 
 func (e *EShell) getFileData() ([]byte, error) {
-	err := e.sendWithEcho("fread 50")
-	if err != nil {
-		return nil, err
+	var result []byte
+
+	for {
+		err := e.sendWithEcho("fread 50")
+		if err != nil {
+			return nil, err
+		}
+		err = e.waitForResponse()
+		if err != nil {
+			return nil, err
+		}
+		decoder := base64.NewDecoder(base64.StdEncoding, strings.NewReader(e.response))
+		buffer := make([]byte, 60)
+		n, err := decoder.Read(buffer)
+		if err != nil {
+			return nil, err
+		}
+		if n == 0 {
+			break
+		}
+		result = append(result, buffer[:n]...)
+		if n < 50 {
+			break
+		}
 	}
-	return nil, nil
+
+	return result, nil
 }
 
 func (e *EShell) fileGet(parts []string) error {
