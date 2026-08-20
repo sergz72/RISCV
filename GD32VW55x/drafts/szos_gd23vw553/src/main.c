@@ -78,7 +78,7 @@ int main(void)
           PUTS("OK\n");
         else if (rc < 0)
           PUTS("Invalid command line\n");
-        else
+        else if (rc != INT32_MAX)
           PRINTF("shell_execute returned %d\n", rc);
         if (getstring_get_echo())
           PUTS("$ ");

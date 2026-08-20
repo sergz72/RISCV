@@ -18,10 +18,32 @@ MEMORY
 
 SECTIONS
 {
-  /* Start address for the program in virtual memory (commonly 0x10000 or 0x00010000) */
-  /*. = 0;*/
+  /* --- PROGRAM CODE & READ-ONLY DATA --- */
+  
+  .text : {
+    _stext = .;
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+    _etext = .;
+  } >flash : text
+
+  /* Procedure Linkage Table (PLT) - Trampolines for external function calls */
+  .plt : { *(.plt) } >flash : text
+
+  /* Global Offset Table (GOT) - Holds pointers to external variables/functions */
+  .got : { *(.got.plt) *(.got) } >flash : text
+
+  .rodata : { *(.rodata .rodata.* .gnu.linkonce.r.*) } >flash : text
 
   /* --- DYNAMIC LINKING SYSTEM SECTIONS --- */
+
+  /* Relocation sections for dynamic symbols */
+  .rela.dyn : {
+    *(.rela.text .rela.text.*)
+    *(.rela.rodata .rela.rodata.*)
+    *(.rela.data .rela.data.*)
+    *(.rela.got)
+    *(.rela.bss .rela.bss.*)
+  } >flash : text
   
   /* Specifies the path to the dynamic linker (e.g., /lib/ld-linux-riscv32-ilp32.so.1) */
   .interp : { *(.interp) } >flash : text : interp
@@ -39,40 +61,12 @@ SECTIONS
   .gnu.version_d  : { *(.gnu.version_d) } >flash : text
   .gnu.version_r  : { *(.gnu.version_r) } >flash : text
 
-  /* Relocation sections for dynamic symbols */
-  .rela.dyn : {
-    *(.rela.text .rela.text.*)
-    *(.rela.rodata .rela.rodata.*)
-    *(.rela.data .rela.data.*)
-    *(.rela.got)
-    *(.rela.bss .rela.bss.*)
-  } >flash : text
-
   .rela.plt : { *(.rela.plt) } >flash : text
-
-  /* --- PROGRAM CODE & READ-ONLY DATA --- */
-  
-  .text : {
-    _stext = .;
-    *(.text .stub .text.* .gnu.linkonce.t.*)
-    _etext = .;
-  } >flash : text
-
-  /* Procedure Linkage Table (PLT) - Trampolines for external function calls */
-  .plt : { *(.plt) } >flash : text
-
-  .rodata : { *(.rodata .rodata.* .gnu.linkonce.r.*) } >flash : text
-
-  /* Align to next page boundary to separate execution permissions from write permissions */
-  /*. = ALIGN(0x1000);*/
 
   /* --- READ-WRITE DATA & TABLES --- */
 
   /* Dynamic Array Section - tells the loader where tables are located */
   .dynamic : { *(.dynamic) } >flash : data : dynamic
-
-  /* Global Offset Table (GOT) - Holds pointers to external variables/functions */
-  .got : { *(.got.plt) *(.got) } >flash : data
 
   .data : {
     _sdata = .;

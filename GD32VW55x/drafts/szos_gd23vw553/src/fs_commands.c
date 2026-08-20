@@ -132,12 +132,13 @@ static const ShellCommand puts_command = {
 static int fopen_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
 static const ShellCommandItem fopen_command_items[] = {
   {nullptr, param_handler, nullptr},
+  {nullptr, param_handler, nullptr},
   {nullptr, nullptr, fopen_handler}
 };
 static const ShellCommand fopen_command = {
   fopen_command_items,
   "fopen",
-  "fopen path",
+  "fopen path mode",
   nullptr,
   nullptr
 };
@@ -151,6 +152,19 @@ static const ShellCommand fwrite_command = {
   fwrite_command_items,
   "fwrite",
   "fwrite data_base64",
+  nullptr,
+  nullptr
+};
+
+static int fread_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fread_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, fread_handler}
+};
+static const ShellCommand fread_command = {
+  fread_command_items,
+  "fread",
+  "fread length",
   nullptr,
   nullptr
 };
@@ -395,11 +409,11 @@ static int fopen_handler(printf_func pfunc, gets_func gfunc, int argc, char **ar
   current_storage = get_storage(pfunc, argc, argv[0], &outpath);
   if (current_storage == nullptr)
     return 2;
-  current_file = current_storage->fs_operations->fopen(current_storage->fs_context, outpath, "w");
+  current_file = current_storage->fs_operations->fopen(current_storage->fs_context, outpath, argv[1]);
   if (current_file == nullptr)
   {
     current_storage = nullptr;
-    pfunc("Failed to open file for write\n");
+    pfunc("Failed to open file\n");
     return 3;
   }
   return 0;
@@ -413,6 +427,23 @@ static int fwrite_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
   unsigned int l = base64decode(argv[0], strlen(argv[0]), temp_path);
   int rc = current_storage->fs_operations->fwrite(current_storage->fs_context, temp_path, l, 1, current_file);
   return rc < l ? 2 : 0;
+}
+
+static int fread_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  if (current_file == nullptr || current_storage == nullptr)
+    return 1;
+  int l = atoi(argv[0]);
+  if (l <= 0 || l > sizeof(temp_path) / 3)
+    return 2;
+  char buffer[l];
+  int rc = current_storage->fs_operations->fread(current_storage->fs_context, buffer, l, 1, current_file);
+  if (rc < 0)
+    return 3;
+  unsigned int ol = base64encode(buffer, l, temp_path);
+  temp_path[ol] = 0;
+  pfunc("%s\n", temp_path);
+  return INT32_MAX;
 }
 
 static int fclose_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
@@ -474,6 +505,7 @@ void register_fs_commands(void)
   shell_register_command(&puts_command);
   shell_register_command(&fopen_command);
   shell_register_command(&fwrite_command);
+  shell_register_command(&fread_command);
   shell_register_command(&fclose_command);
   shell_register_command(&fcrc32_command);
 }
