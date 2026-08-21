@@ -9,12 +9,14 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
 type EShell struct {
 	commPort interfaces.CommPort
 	response string
+	lock     sync.Mutex
 }
 
 func NewEShell(port interfaces.CommPort) *EShell {
@@ -36,14 +38,20 @@ func (e *EShell) Reader() {
 					buffer[i] = '\n'
 				}
 			}
-			e.response = string(buffer[:n])
-			fmt.Print(e.response)
+			response := string(buffer[:n])
+			fmt.Print(response)
+			e.lock.Lock()
+			e.response += response
+			e.lock.Unlock()
 		}
 	}
 	fmt.Printf("Reader error %v\n", err)
 }
 
 func (e *EShell) send(text string) error {
+	e.lock.Lock()
+	e.response = ""
+	e.lock.Unlock()
 	text += "\r"
 	return e.commPort.Write([]byte(text))
 }
@@ -54,7 +62,6 @@ func (e *EShell) sendWithEcho(text string) error {
 }
 
 func (e *EShell) waitForResponse() error {
-	e.response = ""
 	counter := 0
 	for len(e.response) == 0 {
 		time.Sleep(100 * time.Millisecond)
@@ -74,7 +81,7 @@ func (e *EShell) waitForOk() error {
 	if strings.HasPrefix(e.response, "OK") {
 		return nil
 	}
-	return errors.New(e.response)
+	return fmt.Errorf("bad response with length %d \"%s\"", len(e.response), e.response)
 }
 
 func (e *EShell) sendFileData(data []byte) error {

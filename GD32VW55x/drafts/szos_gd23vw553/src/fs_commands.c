@@ -472,11 +472,11 @@ static int fcrc32_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
   crc32_start();
   for (;;)
   {
-    size = storage->fs_operations->fread(storage->fs_context, temp_path, sizeof(temp_path) - 1, 1, f);
+    size = storage->fs_operations->fread(storage->fs_context, temp_path, sizeof(temp_path), 1, f);
     if (size <= 0)
       break;
     crc32_add(temp_path, size);
-    if (size < sizeof(temp_path) - 1)
+    if (size < sizeof(temp_path))
     {
       size = 0;
       break;
