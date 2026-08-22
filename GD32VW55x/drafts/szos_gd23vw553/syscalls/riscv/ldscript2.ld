@@ -29,10 +29,10 @@ SECTIONS
   /* Procedure Linkage Table (PLT) - Trampolines for external function calls */
   .plt : { *(.plt) } >flash : text
 
+  .rodata : { *(.rodata .rodata.* .gnu.linkonce.r.*) } >flash : text
+
   /* Global Offset Table (GOT) - Holds pointers to external variables/functions */
   .got : { *(.got.plt) *(.got) } >flash : text
-
-  .rodata : { *(.rodata .rodata.* .gnu.linkonce.r.*) } >flash : text
 
   /* --- DYNAMIC LINKING SYSTEM SECTIONS --- */
 
