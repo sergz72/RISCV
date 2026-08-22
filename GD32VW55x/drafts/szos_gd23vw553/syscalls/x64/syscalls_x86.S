@@ -1,4 +1,4 @@
-.global osTaskSwitch,osExit,osDelay,osLeds
+.global osTaskSwitch,osExit,osDelay,osLeds,printf
 
 .section .text
 
@@ -12,4 +12,7 @@ osDelay:
   ret
 
 osLeds:
+  ret
+
+printf:
   ret

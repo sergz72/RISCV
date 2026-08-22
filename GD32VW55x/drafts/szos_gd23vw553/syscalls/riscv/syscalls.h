@@ -54,4 +54,6 @@ static inline void osLeds(bool on, unsigned int leds)
   );
 }
 
+int printf(const char *format, ...);
+
 #endif

@@ -1,10 +1,8 @@
 #include "board.h"
 #include "fs_commands.h"
-#include <shell.h>
 #include <string.h>
 #include <stdlib.h>
 #include "fs.h"
-#include "storage.h"
 #include <base64.h>
 #include <crc32.h>
 
@@ -207,10 +205,36 @@ static const ShellCommand rm_command = {
   nullptr
 };
 
+static int fsize_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem fsize_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, nullptr, fsize_handler}
+};
+static const ShellCommand fsize_command = {
+  fsize_command_items,
+  "fsize",
+  "fsize path",
+  nullptr,
+  nullptr
+};
+
+static int df_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem df_command_items[] = {
+  {nullptr, nullptr, df_handler}
+};
+static const ShellCommand df_command = {
+  df_command_items,
+  "df",
+  "df",
+  nullptr,
+  nullptr
+};
+
+
 const storage_t *current_storage;
 void *current_file;
 
-static const storage_t *get_storage(printf_func pfunc, int argc, const char *inpath, const char **outpath)
+const storage_t *get_storage(printf_func pfunc, int argc, const char *inpath, const char **outpath)
 {
   const char *path;
   if (argc == 0)
@@ -487,6 +511,50 @@ static int fcrc32_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
   return -size;
 }
 
+static int fsize_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "r");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for read\n");
+    return 2;
+  }
+  unsigned int size;
+  int rc = storage->fs_operations->file_size(storage->fs_context, f, &size);
+  if (rc)
+  {
+    pfunc("Failed to get file size\n");
+    storage->fs_operations->fclose(storage->fs_context, f);
+    return 3;
+  }
+  pfunc("%d\n", size);
+  storage->fs_operations->fclose(storage->fs_context, f);
+  return INT32_MAX;
+}
+
+static int df_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  unsigned int number_of_storages;
+  const storage_t *storage = fs_get_storages(&number_of_storages);
+  if (!storage)
+    return 0;
+  while (number_of_storages--)
+  {
+    struct fs_stat st;
+    const int rc = storage->fs_operations->fs_stat(storage->fs_context, &st);
+    if (rc)
+      pfunc("%s: Failed to get file system status\n", storage->mount_point);
+    else
+      pfunc("%s: total %8d used %8d free %8d\n", storage->mount_point, st.total_size, st.used_size, st.total_size - st.used_size);
+    storage++;
+  }
+  return 0;
+}
+
 void register_fs_commands(void)
 {
   cwd[0] = '/';
@@ -508,4 +576,6 @@ void register_fs_commands(void)
   shell_register_command(&fread_command);
   shell_register_command(&fclose_command);
   shell_register_command(&fcrc32_command);
+  shell_register_command(&fsize_command);
+  shell_register_command(&df_command);
 }

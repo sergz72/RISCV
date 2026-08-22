@@ -8,4 +8,6 @@ void osExit(int code);
 void osDelay(int ms);
 void osLeds(bool on, unsigned int leds);
 
+int printf(const char *format, ...);
+
 #endif

@@ -5,5 +5,6 @@
 
 int fs_init(void);
 const storage_t *fs_get_storage(const char *path, const char **outpath);
+const storage_t *fs_get_storages(unsigned int *number_of_storages);
 
 #endif

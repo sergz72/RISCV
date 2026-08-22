@@ -13,6 +13,18 @@ struct dirent
   char name[256];
 };
 
+struct file_stat
+{
+  size_t size;
+  unsigned char type;
+};
+
+struct fs_stat
+{
+  unsigned int total_size;
+  unsigned int used_size;
+};
+
 typedef struct
 {
   void * (*opendir)(void *fs_context, const char *path);
@@ -28,6 +40,9 @@ typedef struct
   int (*fwrite)(void *fs_context, const void *ptr, size_t size, size_t count, void *stream);
   int (*fseek)(void *fs_context, void *stream, long offset, int whence);
   int (*truncate)(void *fs_context, void *stream, unsigned int length);
+  int (*file_size)(void *fs_context, void *stream, unsigned int *length);
+  int (*stat)(void *fs_context, const char *path, struct file_stat *st);
+  int (*fs_stat)(void *fs_context, struct fs_stat *st);
 } fs_operations_t;
 
 typedef struct {
@@ -35,6 +50,7 @@ typedef struct {
   unsigned int page_size;
   unsigned int minimum_write_size;
   unsigned int minimum_read_size;
+  const char *mount_point;
   void *fs_context;
   const fs_operations_t *fs_operations;
   int (*read)(unsigned int addr, unsigned int size, void* buffer);

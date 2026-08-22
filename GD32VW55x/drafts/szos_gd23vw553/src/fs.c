@@ -8,6 +8,7 @@ static storage_t internal_flash_storage;
 int fs_init(void)
 {
   internal_flash_storage_init(&internal_flash_storage);
+  internal_flash_storage.mount_point = "/flash";
   return fs_lfs_init(&internal_flash_storage, internal_flash_storage.size >> 11, internal_flash_storage.size >> 15, 500);
 }
 
@@ -22,4 +23,10 @@ const storage_t *fs_get_storage(const char *path, const char **outpath)
     return &internal_flash_storage;
   }
   return nullptr;
+}
+
+const storage_t *fs_get_storages(unsigned int *number_of_storages)
+{
+  *number_of_storages = 1;
+  return &internal_flash_storage;
 }

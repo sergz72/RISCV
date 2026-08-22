@@ -15,6 +15,9 @@ static int lfs_fread(void *fs_context, void *ptr, size_t size, size_t count, voi
 static int lfs_fwrite(void *fs_context, const void *ptr, size_t size, size_t count, void *stream);
 static int lfs_fseek(void *fs_context, void *stream, long offset, int whence);
 static int lfs_truncate(void *fs_context, void *stream, unsigned int length);
+static int lfs_file_size_op(void *fs_context, void *stream, unsigned int *length);
+static int lfs_stat_op(void *fs_context, const char *path, struct file_stat *st);
+static int lfs_fsstat_op(void *fs_context, struct fs_stat *st);
 
 const fs_operations_t lfs_operations =
 {
@@ -31,6 +34,9 @@ const fs_operations_t lfs_operations =
   .fseek = lfs_fseek,
   .fwrite = lfs_fwrite,
   .truncate = lfs_truncate,
+  .file_size = lfs_file_size_op,
+  .stat = lfs_stat_op,
+  .fs_stat = lfs_fsstat_op
 };
 
 static void * lfs_opendir(void *fs_context, const char *path)
@@ -180,6 +186,42 @@ static int lfs_fseek(void *fs_context, void *stream, long offset, const int when
 static int lfs_truncate(void *fs_context, void *stream, const unsigned int length)
 {
   return lfs_file_truncate(fs_context, stream, length);
+}
+
+static int lfs_file_size_op(void *fs_context, void *stream, unsigned int *length)
+{
+  const int rc = lfs_file_size(fs_context, stream);
+  if (rc < 0)
+    return rc;
+  *length = rc;
+  return 0;
+}
+
+static int lfs_stat_op(void *fs_context, const char *path, struct file_stat *st)
+{
+  struct lfs_info info;
+  const int rc = lfs_stat(fs_context, path, &info);
+  if (rc >= 0)
+  {
+    st->size = info.size;
+    st->type = info.type;
+  }
+  return rc;
+}
+
+static int lfs_fsstat_op(void *fs_context, struct fs_stat *st)
+{
+  int in_use_blocks = lfs_fs_size(fs_context);
+  if (in_use_blocks < 0)
+    return in_use_blocks;
+  struct lfs_fsinfo info;
+  const int rc = lfs_fs_stat(fs_context, &info);
+  if (rc >= 0)
+  {
+    st->total_size = info.block_count * info.block_size;
+    st->used_size = in_use_blocks * info.block_size;
+  }
+  return rc;
 }
 
 static int read_storage(const struct lfs_config* c, lfs_block_t block, lfs_off_t off, void* buffer, lfs_size_t size)

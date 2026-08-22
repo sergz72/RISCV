@@ -1,11 +1,15 @@
 #include "board.h"
 #include "system_commands.h"
-#include <shell.h>
+#include "fs_commands.h"
 #include <string.h>
 #include <getstring.h>
 #include "pmp.h"
 #include <malloc.h>
 #include <stdlib.h>
+#include <elf_file_loader.h>
+
+const function_def function_map[] = {
+};
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
 static const ShellCommandItem reboot_command_items[] = {
@@ -55,6 +59,27 @@ static const ShellCommand echo_command = {
   echo_command_items,
   "echo",
   "echo on|off",
+  nullptr,
+  nullptr
+};
+
+static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
+static const ShellCommandItem run_command_items[] = {
+  {nullptr, param_handler, nullptr},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, param_handler, run_handler},
+  {nullptr, nullptr, run_handler}
+};
+static const ShellCommand run_command = {
+  run_command_items,
+  "run",
+  "run file_name [parameters]",
   nullptr,
   nullptr
 };
@@ -164,6 +189,63 @@ static int memalloc_handler(printf_func pfunc, gets_func gfunc, int argc, char *
   return 0;
 }
 
+void *rwx_alloc(unsigned int size)
+{
+  return malloc(size);
+}
+
+void rwx_free(void *p, unsigned int size)
+{
+  free(p);
+}
+
+static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
+{
+  const char *outpath;
+  const storage_t *storage = get_storage(pfunc, argc, argv[0], &outpath);
+  if (storage == nullptr)
+    return 1;
+  void *f = storage->fs_operations->fopen(storage->fs_context, outpath, "r");
+  if (f == nullptr)
+  {
+    pfunc("Failed to open file for read\n");
+    return 2;
+  }
+  unsigned int size;
+  int rc = storage->fs_operations->file_size(storage->fs_context, f, &size);
+  if (rc)
+    return rc;
+  void *p = malloc(size);
+  if (p == nullptr)
+  {
+    storage->fs_operations->fclose(storage->fs_context, f);
+    pfunc("Failed to allocate memory\n");
+    return 3;
+  }
+  int read_size = storage->fs_operations->fread(storage->fs_context, p, size, 1, f);
+  if (read_size != size)
+  {
+    storage->fs_operations->fclose(storage->fs_context, f);
+    free(p);
+    pfunc("Failed to read file\n");
+    return 4;
+  }
+  storage->fs_operations->fclose(storage->fs_context, f);
+  app_image image;
+  rc = elf_file_load(p, function_map, sizeof(function_map) / sizeof(function_def), 2048, argc, (const char**)argv, &image);
+  if (rc)
+  {
+    free(p);
+    pfunc("Failed to load file\n");
+    return rc;
+  }
+  free(p);
+  pfunc("Image size=%d, text_size=%d\n", image.size, image.text_size);
+  image.main(argc, image.argvp);
+  rwx_free(image.address, image.size);
+  return 0;
+}
+
 void register_system_commands(void)
 {
   pmp_init();
@@ -171,4 +253,5 @@ void register_system_commands(void)
   shell_register_command(&test_command);
   shell_register_command(&echo_command);
   shell_register_command(&memalloc_command);
+  shell_register_command(&run_command);
 }
