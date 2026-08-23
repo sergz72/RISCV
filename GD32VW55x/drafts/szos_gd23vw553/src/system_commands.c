@@ -7,8 +7,11 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <elf_file_loader.h>
+#include "os.h"
+#include <common_printf.h>
 
-const function_def function_map[] = {
+static const function_def function_map[] = {
+  {.name = "printf", .pointer = common_printf}
 };
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data);
@@ -241,9 +244,20 @@ static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
   }
   free(p);
   pfunc("Image size=%d, text_size=%d\n", image.size, image.text_size);
-  image.main(argc, image.argvp);
-  rwx_free(image.address, image.size);
-  return 0;
+  os_task_t task;
+  task.image = image.address;
+  task.argc = argc;
+  task.argv = image.argvp;
+  task.entry = image.main;
+  task.image_size = image.size;
+  task.text_size = image.text_size;
+  rc = os_create_task(&task);
+  if (rc)
+  {
+    pfunc("Failed to create task\n");
+    rwx_free(image.address, image.size);
+  }
+  return rc;
 }
 
 void register_system_commands(void)

@@ -108,7 +108,7 @@ exc_other:
 
   lw x1, 4(x5)
   lw x2, 8(x5)
-  lw x3, 12(x5)
+  //lw x3, 12(x5) -- do not change gp
   lw x4, 16(x5)
   lw x6, 24(x5)
   lw x7, 28(x5)

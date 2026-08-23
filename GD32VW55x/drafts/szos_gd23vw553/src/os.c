@@ -1,18 +1,18 @@
 #include "board.h"
 #include <common_printf.h>
 #include "os.h"
-
 #include <limits.h>
-
+#include <stdlib.h>
 #include "exceptions.h"
 #include "sys_timer.h"
+#include <syscalls.h>
 
 /**
  * @brief Performs an atomic 64-bit load on RV32.
  * @param src Pointer to the aligned 64-bit target memory location.
  * @return The atomically loaded 64-bit value.
  */
-static inline unsigned long long int atomic_load_64(const unsigned long long int *src) {
+static inline unsigned long long int atomic_load_64(const volatile unsigned long long int *src) {
   union
   {
     struct
@@ -59,7 +59,42 @@ void os_delay(void)
     unsigned int ms = (unsigned int)(min_sleep_to -= now);
     delayms(ms);
   }
+  //todo - pmp settings switch
   current_task_data = min_sleep_to_task;
+}
+
+int os_create_task(const os_task_t *task)
+{
+  for (task_data *tdata = tasks; tdata < tasks + MAX_TASKS; tdata++)
+  {
+    if (!tdata->is_active)
+    {
+      tdata->image = task->image;
+      tdata->registers[1] = (unsigned int)task->image + task->image_size; // x2(sp)
+      tdata->registers[9] = task->argc; // a0
+      tdata->registers[10] = (unsigned int)task->argv; // a1
+      tdata->mepc = (unsigned int)task->entry;
+      tdata->mstatus = __RV_CSR_READ(CSR_MSTATUS);
+      tdata->mstatus = __RV_INSERT_FIELD(tdata->mstatus, MSTATUS_MPP, PRV_U);
+      /* Set previous MIE disabled */
+      tdata->mstatus = __RV_INSERT_FIELD(tdata->mstatus, MSTATUS_MPIE, 0);
+      tdata->sleep_to = 0;
+      tdata->is_active = true;
+      //todo - pmp settings
+      return 0;
+    }
+  }
+  return 1;
+}
+
+void os_end_task(task_data *task)
+{
+  task->is_active = false;
+  if (task->image)
+  {
+    free(task->image);
+    task->image = nullptr;
+  }
 }
 
 void ecall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3, unsigned int a4, unsigned int a5,
@@ -67,6 +102,13 @@ void ecall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned i
 {
   switch (a7)
   {
+  case 1: // osExit
+    os_end_task(current_task_data);
+    osDelay(0);
+    break;
+  case 2: // osLeds
+    puts_("osLeds ecall\n");
+    break;
   default:
     PRINTF("Unknown environment call %x from U-mode. Rebooting...\n", a7);
     reboot();
