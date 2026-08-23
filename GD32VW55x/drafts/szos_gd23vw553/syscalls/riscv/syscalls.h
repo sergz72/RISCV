@@ -3,17 +3,6 @@
 
 #include <stdbool.h>
 
-static inline void osTaskSwitch(void)
-{
-  __asm__ __volatile__ (
-      "li a7, 0\n"
-      "ecall"
-      : /* No output operands */
-      : /* No input operands */
-      : "a7" /* Clobber list: tells the compiler we modified a7 */
-  );
-}
-
 static inline void __attribute__((noreturn)) osExit(int code)
 {
   register int r_a0 __asm__("a0") = code;
@@ -32,7 +21,7 @@ static inline void osDelay(int ms)
   register int r_a0 __asm__("a0") = ms;
 
   __asm__ __volatile__ (
-      "li a7, 2\n"
+      "li a7, 0\n"
       "ecall"
       : /* No output operands */
       : "r" (r_a0)
@@ -53,7 +42,5 @@ static inline void osLeds(bool on, unsigned int leds)
       : "a7" /* Clobber list: tells the compiler we modified a7 */
   );
 }
-
-int printf(const char *format, ...);
 
 #endif

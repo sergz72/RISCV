@@ -9,6 +9,7 @@
 #include "fs.h"
 #include <trng_commands.h>
 #include <crc_commands.h>
+#include <syscalls.h>
 
 unsigned char rx_buffer[RX_BUF_LEN];
 unsigned char *rx_buffer_write_p, *rx_buffer_read_p;
@@ -54,7 +55,7 @@ int main(void)
 
   while(1)
   {
-    delayms(100);
+    osDelay(100);
     led_state = !led_state;
     if (led_state)
       LED_TIMER_ON;

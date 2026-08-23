@@ -1,30 +1,11 @@
-#include "board.h"
 #include "exceptions.h"
 #include <common_printf.h>
-//#include <stdio.h>
-#include "sys_timer.h"
+#include "os.h"
 
-typedef struct
-{
-  unsigned int mcause;
-  unsigned int registers[31];
-  unsigned int mepc;
-  unsigned int mstatus;
-  bool is_active;
-  unsigned long long int sleep_to;
-  pmp_config pmp_config_code, pmp_config_data;
-} task_data;
-
-static task_data tasks[MAX_TASKS];
-task_data *current_task_data = tasks;
+task_data tasks[MAX_TASKS];
+task_data *current_task_data;
 
 unsigned int exception_stack[EXCEPTION_STACK_SIZE] __attribute__((aligned(16)));
-
-static void task_switch(void)
-{
-  delayms(1000);
-  PUTS("Task switch\n");
-}
 
 void exc_handler(void)
 {
@@ -51,12 +32,12 @@ void exc_handler(void)
     cause = "Illegal instruction fault";
     break;
   case UmodeEcall_EXCn:
-    task_switch();
+    os_delay();
     return;
   case MmodeEcall_EXCn:
     if (!current_task_data->registers[16]) // a7
     {
-      task_switch();
+      os_delay();
       return;
     }
     cause = "Environment call from M-mode";
@@ -81,28 +62,10 @@ void exc_handler(void)
   reboot();
 }
 
-void ecall_handler(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3, unsigned int a4, unsigned int a5,
-                   unsigned int a6, unsigned int a7)
-{
-  switch (a7)
-  {
-    case 1:
-      PUTS("Task switch complete. Rebooting...\n");
-      reboot();
-      break;
-    default:
-      PRINTF("Unknown environment call %x from U-mode. Rebooting...\n", a7);
-      reboot();
-  }
-}
-
-void nmi_handler(unsigned long mcause, unsigned long sp)
-{
-}
-
 void Exception_Init(void)
 {
-  //asm volatile ("csrw mscratch, %0" : : "r" (&exception_stack[EXCEPTION_STACK_SIZE]));
+  current_task_data = tasks;
+  current_task_data->is_active = true;
 }
 
 void Exception_Register_EXC(uint32_t EXCn, unsigned long exc_handler)

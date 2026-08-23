@@ -23,6 +23,7 @@ file(GLOB SOURCES
         "src/main.c"
         "src/hal.c"
         "src/exceptions.c"
+        "src/os.c"
         "src/pmp.c"
         "src/sys_timer.c"
         "src/system_commands.c"
@@ -63,7 +64,7 @@ file(GLOB SOURCES
         "../../../fs/littlefs/lfs_util.c"
 )
 
-include_directories(src .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell
+include_directories(src syscalls/riscv .. ../lib ../lib/Include ../lib/NMSIS/Core/Include ../../../common_lib ../../../common_lib/shell
         ../../../common_lib/crypto ../../../fs/littlefs)
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
