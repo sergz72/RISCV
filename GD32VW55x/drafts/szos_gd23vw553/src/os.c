@@ -78,7 +78,7 @@ int os_create_task(const os_task_t *task)
       tdata->registers[1] = (unsigned int)task->image + task->image_size; // x2(sp)
       tdata->registers[9] = task->argc; // a0
       tdata->registers[10] = (unsigned int)task->argv; // a1
-      tdata->mepc = (unsigned int)task->entry;
+      tdata->mepc = (unsigned int)task->entry - 4;
       tdata->mstatus = __RV_CSR_READ(CSR_MSTATUS);
       tdata->mstatus = __RV_INSERT_FIELD(tdata->mstatus, MSTATUS_MPP, PRV_U);
       /* Set previous MIE disabled */

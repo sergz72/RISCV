@@ -45,8 +45,12 @@ exc_entry:
   bne  x5, x6, exc_other
   beq  a7, zero, exc_other // osDelay ecall
   jal  ecall_handler
-  lw   sp, SP(sp)
+  csrci mstatus, 8 // disable interrupts
+  lw   x5, MEPC(sp)
+  addi x5, x5, 4
+  csrw mepc, x5
   lw   x3, X3(sp) //gp
+  lw   sp, SP(sp)
   mret
 
 exc_other:
@@ -115,7 +119,6 @@ exc_other:
 
   lw x1, 4(x5)
   lw x2, 8(x5)
-  //lw x3, 12(x5) -- do not change gp
   lw x3, 12(x5)
   lw x4, 16(x5)
   lw x6, 24(x5)
