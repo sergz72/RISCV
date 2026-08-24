@@ -15,7 +15,8 @@ typedef struct
   bool is_active;
   unsigned long long int sleep_to;
   void *image;
-  pmp_config pmp_config_code, pmp_config_data;
+  unsigned int image_size;
+  unsigned int text_size;
 } task_data;
 
 extern task_data tasks[MAX_TASKS];

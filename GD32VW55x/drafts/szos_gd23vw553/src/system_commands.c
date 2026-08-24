@@ -192,12 +192,12 @@ static int memalloc_handler(printf_func pfunc, gets_func gfunc, int argc, char *
   return 0;
 }
 
-void *rwx_alloc(unsigned int size)
+void *elf_file_alloc(unsigned int size, unsigned int text_size)
 {
-  return malloc(size);
+  return aligned_alloc(text_size, size);
 }
 
-void rwx_free(void *p, unsigned int size)
+void elf_file_free(void *p, unsigned int size)
 {
   free(p);
 }
@@ -243,7 +243,7 @@ static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
     return rc;
   }
   free(p);
-  pfunc("Image size=%d, text_size=%d\n", image.size, image.text_size);
+  pfunc("Image base=0x%08X size=%d(0x%08X), text_size=%d(0x%08X)\n", image.address, image.size, image.size, image.text_size, image.text_size);
   os_task_t task;
   task.image = image.address;
   task.argc = argc;
@@ -255,14 +255,14 @@ static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
   if (rc)
   {
     pfunc("Failed to create task\n");
-    rwx_free(image.address, image.size);
+    elf_file_free(image.address, image.size);
   }
   return rc;
 }
 
 void register_system_commands(void)
 {
-  pmp_init();
+  pmp_init_flash_rx_ram_rw();
   shell_register_command(&reboot_command);
   shell_register_command(&test_command);
   shell_register_command(&echo_command);

@@ -11,8 +11,8 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 SET(LINKER_SCRIPT ../../szos_gd23vw553/syscalls/riscv/ldscript2.ld)
 
-SET (FLASH_SIZE 1024)
-SET (RAM_SIZE 1024)
+SET (FLASH_SIZE 4096)
+SET (RAM_SIZE 4096)
 
 SET(COMMON_FLAGS "-mno-relax -mno-explicit-relocs -march=rv32imafdc_zba_zbb_zbc_zbs_xxldspn1x -mtune=nuclei-300-series -mcmodel=medlow -mdiv -mabi=ilp32d -msave-restore -fmessage-length=0 -fsigned-char -fno-common -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 add_definitions(-DFLASH_SIZE=${FLASH_SIZE} -DRAM_SIZE=${RAM_SIZE})

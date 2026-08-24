@@ -6,6 +6,7 @@
 #include "exceptions.h"
 #include "sys_timer.h"
 #include <syscalls.h>
+#include "pmp.h"
 
 /**
  * @brief Performs an atomic 64-bit load on RV32.
@@ -59,7 +60,8 @@ void os_delay(void)
     unsigned int ms = (unsigned int)(min_sleep_to -= now);
     delayms(ms);
   }
-  //todo - pmp settings switch
+  if (min_sleep_to_task->image)
+    pmp_init_user((unsigned int)min_sleep_to_task->image, min_sleep_to_task->image_size, min_sleep_to_task->text_size);
   current_task_data = min_sleep_to_task;
 }
 
@@ -70,6 +72,8 @@ int os_create_task(const os_task_t *task)
     if (!tdata->is_active)
     {
       tdata->image = task->image;
+      tdata->image_size = task->image_size;
+      tdata->text_size = task->text_size;
       tdata->registers[1] = (unsigned int)task->image + task->image_size; // x2(sp)
       tdata->registers[9] = task->argc; // a0
       tdata->registers[10] = (unsigned int)task->argv; // a1
@@ -80,7 +84,6 @@ int os_create_task(const os_task_t *task)
       tdata->mstatus = __RV_INSERT_FIELD(tdata->mstatus, MSTATUS_MPIE, 0);
       tdata->sleep_to = 0;
       tdata->is_active = true;
-      //todo - pmp settings
       return 0;
     }
   }
