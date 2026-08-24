@@ -7,6 +7,16 @@ task_data *current_task_data;
 
 unsigned int exception_stack[EXCEPTION_STACK_SIZE] __attribute__((aligned(16)));
 
+void print_registers(void)
+{
+  for (int i = 0; i < 32; i+=4)
+    PRINTF("x%d=0x%08x x%d=0x%08x x%d=0x%08x x%d=0x%08x\n",
+      i, i == 0 ? 0 : current_task_data->registers[i-1],
+      i+1, current_task_data->registers[i],
+      i+2, current_task_data->registers[i+1],
+      i+3, current_task_data->registers[i+2]);
+}
+
 void exc_handler(void)
 {
   unsigned int mcause = current_task_data->mcause & MCAUSE_CAUSE;
@@ -58,7 +68,9 @@ void exc_handler(void)
 
   CSR_MSTATUS_Type mstatus;
   mstatus.d = __RV_CSR_READ(CSR_MSTATUS);
-  PRINTF("\n%s exception from mode %d, mcause: 0x%x, mepc: 0x%x. Rebooting...\n", cause, mstatus.b.mpp, current_task_data->mcause, current_task_data->mepc);
+  PRINTF("\n%s exception from mode %d, mcause: 0x%x, mepc: 0x%x.\n", cause, mstatus.b.mpp, current_task_data->mcause, current_task_data->mepc);
+  print_registers();
+  PUTS("Rebooting...\n");
   reboot();
 }
 

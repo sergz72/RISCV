@@ -7,6 +7,7 @@
 #include "sys_timer.h"
 #include <syscalls.h>
 #include "pmp.h"
+#include <core_feature_cache.h>
 
 /**
  * @brief Performs an atomic 64-bit load on RV32.

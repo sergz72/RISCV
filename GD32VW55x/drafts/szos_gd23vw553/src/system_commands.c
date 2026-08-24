@@ -92,6 +92,7 @@ static const ShellCommand run_command = {
 /* Create a stack for user mode execution */
 uint8_t umode_stack[UMODE_STACK_SIZE] __attribute__((aligned(16)));
 uintptr_t umode_sp = (uintptr_t) (umode_stack + sizeof(umode_stack));
+volatile unsigned int v;
 
 static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv, void *data)
 {
@@ -99,22 +100,54 @@ static int reboot_handler(printf_func pfunc, gets_func gfunc, int argc, char **a
   reboot();
 }
 
-static void trigger_illegal_instruction_exception(void)
+static void __attribute((naked)) trigger_illegal_instruction_exception(void)
 {
+  __ASM volatile("li x1, 1");
+  __ASM volatile("li x2, 2");
+  __ASM volatile("li x3, 3");
+  __ASM volatile("li x4, 4");
+  __ASM volatile("li x5, 5");
+  __ASM volatile("li x6, 6");
+  __ASM volatile("li x7, 7");
+  __ASM volatile("li x8, 8");
+  __ASM volatile("li x9, 9");
+  __ASM volatile("li x10, 10");
+  __ASM volatile("li x11, 11");
+  __ASM volatile("li x12, 12");
+  __ASM volatile("li x13, 13");
+  __ASM volatile("li x14, 14");
+  __ASM volatile("li x15, 15");
+  __ASM volatile("li x16, 16");
+  __ASM volatile("li x17, 17");
+  __ASM volatile("li x18, 18");
+  __ASM volatile("li x19, 19");
+  __ASM volatile("li x20, 20");
+  __ASM volatile("li x21, 21");
+  __ASM volatile("li x22, 22");
+  __ASM volatile("li x23, 23");
+  __ASM volatile("li x24, 24");
+  __ASM volatile("li x25, 25");
+  __ASM volatile("li x26, 26");
+  __ASM volatile("li x27, 27");
+  __ASM volatile("li x28, 28");
+  __ASM volatile("li x29, 29");
+  __ASM volatile("li x30, 30");
+  __ASM volatile("li x31, 31");
   __ASM volatile(".word 0xffffffff");
 }
 
-static void trigger_ecall_exception(void)
+static void __attribute((naked)) trigger_ecall_exception(void)
 {
+  v = 0;
   __ASM volatile("li a7, 64");
   __ASM volatile("ecall");
 }
 
-static void trigger_task_switch(void)
+static void __attribute((naked)) trigger_task_switch(void)
 {
   __ASM volatile("mv a7, zero");
   __ASM volatile("ecall");
-  __ASM volatile("li a7, 1");
+  __ASM volatile("li a7, 10");
   __ASM volatile("ecall");
 }
 
