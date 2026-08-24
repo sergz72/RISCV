@@ -3,11 +3,11 @@
 #include "os.h"
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 #include "exceptions.h"
 #include "sys_timer.h"
 #include <syscalls.h>
 #include "pmp.h"
-#include <core_feature_cache.h>
 
 /**
  * @brief Performs an atomic 64-bit load on RV32.
@@ -84,6 +84,7 @@ int os_create_task(const os_task_t *task)
       /* Set previous MIE disabled */
       tdata->mstatus = __RV_INSERT_FIELD(tdata->mstatus, MSTATUS_MPIE, 0);
       tdata->sleep_to = 0;
+      strncpy(tdata->name, task->name, sizeof(tdata->name) - 1);
       tdata->is_active = true;
       return 0;
     }

@@ -1,5 +1,6 @@
 #include "exceptions.h"
 #include <common_printf.h>
+#include <string.h>
 #include "os.h"
 
 task_data tasks[MAX_TASKS];
@@ -78,6 +79,7 @@ void Exception_Init(void)
 {
   current_task_data = tasks;
   current_task_data->is_active = true;
+  strcpy(current_task_data->name, "shell");
 }
 
 void Exception_Register_EXC(uint32_t EXCn, unsigned long exc_handler)

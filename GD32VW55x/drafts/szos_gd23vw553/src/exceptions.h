@@ -17,6 +17,7 @@ typedef struct
   void *image;
   unsigned int image_size;
   unsigned int text_size;
+  char name[256];
 } task_data;
 
 extern task_data tasks[MAX_TASKS];

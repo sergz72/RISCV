@@ -284,6 +284,7 @@ static int run_handler(printf_func pfunc, gets_func gfunc, int argc, char **argv
   task.entry = image.main;
   task.image_size = image.size;
   task.text_size = image.text_size;
+  task.name = argv[0];
   rc = os_create_task(&task);
   if (rc)
   {

@@ -5,6 +5,7 @@
 
 typedef struct
 {
+  char *name;
   void *image;
   unsigned int image_size;
   unsigned int text_size;
