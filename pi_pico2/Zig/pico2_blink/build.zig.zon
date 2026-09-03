@@ -1,0 +1,14 @@
+.{
+    .name = .pico2_blink,
+    .version = "0.0.0",
+    .fingerprint = 0xe24caf4a14a9c455,
+    .minimum_zig_version = "0.17.0-dev.1936+5a625d5f3",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        // For example...
+        //"LICENSE",
+        //"README.md",
+    },
+}
