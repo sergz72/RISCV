@@ -55,8 +55,8 @@ _reset_handler:
     csrw mtvec, t0
 
     // copy data segment to RAM
-    la t0, __DATA_BASE_ADDRESS
-    la t1, __BSS_BASE_ADDRESS
+    la t0, _data_start
+    la t1, _bss_start
     bgeu t0, t1, copy_end
 copy_loop:
     lw   t2, (t0)
@@ -66,8 +66,8 @@ copy_loop:
     bltu t0, t1, copy_loop
 copy_end:
     // clear bss
-    la   t0, __BSS_BASE_ADDRESS
-    la   t1, __BSS_END
+    la   t0, _bss_start
+    la   t1, _bss_end
     bgeu t0, t1, zero_end
 bss_fill_loop:
     sw   x0, (t0)
@@ -78,4 +78,24 @@ zero_end:
     la   sp, __CORE0_STACK_TOP
     la   gp, __global_pointer$
     csrw mscratch, zero
-    j  main
+    j  main_cpu0
+
+.globl cpu1_reset_handler
+cpu1_reset_handler:
+    /* disable all interrupts flag */
+    li t0, ~0x08
+    csrc mstatus, t0
+
+    /* disable all specific interrupt sources */
+    csrw mie, x0
+
+    // setup interrupt handlers
+    // mtvec bit 0 = VECTORED: Vectored entry to a 16-entry jump table starting at mtvec
+    la t0, _VectoredInterruptVectorTable
+    addi t0, t0, 1
+    csrw mtvec, t0
+
+    la   sp, __CORE0_STACK_TOP
+    la   gp, __global_pointer$
+    csrw mscratch, zero
+    j  main_cpu1

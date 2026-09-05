@@ -1,67 +1,110 @@
 .section .text, "ax"
 
+.equ T6,      72
+.equ T5,      68
+.equ T4,      64
+.equ T3,      60
+.equ A7,      56
+.equ A6,      52
+.equ A5,      48
+.equ A4,      44
+.equ A3,      40
+.equ A2,      36
+.equ A1,      32
+.equ A0,      28
+.equ T2,      24
+.equ T1,      20
 .equ T0,      16
 .equ RA,      12
 .equ GP,      8
 .equ SP,      4
 .equ MEPC,    0
 
-.macro IRQ_HANDLER func
-    csrrw t0, mscratch, t0
-    beqz  t0, .set_sp\@
-    csrrw t0, mscratch, t0
+.equ CPUID_ADDRESS, 0xD0000000
 
-    addi sp, sp, -T0-4
+.macro SAVE_REGS
+  sw   t6, T6(sp)
+  sw   t5, T5(sp)
+  sw   t4, T4(sp)
+  sw   t3, T3(sp)
+  sw   a7, A7(sp)
+  sw   a6, A6(sp)
+  sw   a5, A5(sp)
+  sw   a4, A4(sp)
+  sw   a3, A3(sp)
+  sw   a2, A2(sp)
+  sw   a1, A1(sp)
+  sw   a0, A0(sp)
+  sw   t2, T2(sp)
+  sw   t1, T1(sp)
   sw   t0, T0(sp)
   sw   ra, RA(sp)
   sw   gp, GP(sp)
   la   gp, __global_pointer$
   csrr t0, mepc
   sw   t0, MEPC(sp)
+.endm
 
-  csrsi mstatus, 8 // enable interrupts
-
-  jal  MachineExternalInterruptHandler
-
-  csrci mstatus, 8 // disable interrupts
-  lw   t0, MEPC(sp)
-  csrw mepc, x5
-  lw   t0, T0(sp)
-  lw   ra, RA(sp)
-  lw   gp, GP(sp)
-  addi sp, sp, T0+4
-  mret
-
-.set_sp\@:
-    csrr t0, mscratch
-    csrw mscratch, sp
-    la sp, __EXCEPTION_STACK_TOP - T0 - 4
-/*stack:
-  t0
-  ra
-  gp
-  old_sp
-  mepc
-*/
-  sw   t0, T0(sp)
-  sw   ra, RA(sp)
-  sw   gp, GP(sp)
-  la   gp, __global_pointer$
-  csrr t0, mscratch
-  sw   t0, SP(sp)
-  csrr t0, mepc
-  sw   t0, MEPC(sp)
-
-  csrsi mstatus, 8 // enable interrupts
-
-  jal  \func
-
+.macro RESTORE_REGS
   csrci mstatus, 8 // disable interrupts
   lw   t0, MEPC(sp)
   csrw mepc, t0
+  lw   t6, T6(sp)
+  lw   t5, T5(sp)
+  lw   t4, T4(sp)
+  lw   t3, T3(sp)
+  lw   a7, A7(sp)
+  lw   a6, A6(sp)
+  lw   a5, A5(sp)
+  lw   a4, A4(sp)
+  lw   a3, A3(sp)
+  lw   a2, A2(sp)
+  lw   a1, A1(sp)
+  lw   a0, A0(sp)
+  lw   t2, T2(sp)
+  lw   t1, T1(sp)
   lw   t0, T0(sp)
   lw   ra, RA(sp)
   lw   gp, GP(sp)
+.endm
+
+.macro IRQ_HANDLER func
+  csrrw t0, mscratch, t0
+  beqz  t0, .set_sp\@
+  csrrw t0, mscratch, t0
+
+  addi sp, sp, -T6-4
+
+  SAVE_REGS
+
+  jal  \func
+
+  RESTORE_REGS
+
+  addi sp, sp, T6+4
+  mret
+
+.set_sp\@:
+  csrr t0, mscratch
+  csrw mscratch, sp
+  la sp, CPUID_ADDRESS
+  lw sp, (sp)
+  bnez sp, .cpu1\@
+  la sp, __CORE0_EXCEPTION_STACK_TOP - T0 - 4
+  j .save\@
+.cpu1\@:
+  la sp, __CORE1_EXCEPTION_STACK_TOP - T0 - 4
+.save\@:
+
+  SAVE_REGS
+
+  csrr t0, mscratch
+  sw   t0, SP(sp)
+
+  jal  \func
+
+  RESTORE_REGS
+
   lw   sp, SP(sp)
   csrw mscratch, zero
   mret

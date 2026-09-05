@@ -55,7 +55,23 @@ pub const IrqNum = enum(u32) {
     spare_irq_5 = 51
 };
 
-const IRQHandler = *const fn () void;
+pub const MieRegister = packed struct(u32) {
+    reserved0: u1 = 0,
+    ssie: bool = false,           // Bit 1: Supervisor Software
+    reserved1: u1 = 0,
+    msie: bool = false,           // Bit 3: Machine Software
+    reserved2: u1 = 0,
+    stie: bool = false,           // Bit 5: Supervisor Timer
+    reserved3: u1 = 0,
+    mtie: bool = false,           // Bit 7: Machine Timer
+    reserved4: u1 = 0,
+    seie: bool = false,           // Bit 9: Supervisor External
+    reserved5: u1 = 0,
+    meie: bool = false,           // Bit 11: Machine External
+    reserved6: u20 = 0,           // Bits 12-31: Reserved or platform-specific local interrupts
+};
+
+const IRQHandler = *const fn () callconv(.c) void;
 
 var irq_handlers = [NUM_IRQS]IRQHandler{
     DefaultIRQHandler,
@@ -108,23 +124,25 @@ var irq_handlers = [NUM_IRQS]IRQHandler{
     DefaultIRQHandler,
     DefaultIRQHandler,
     DefaultIRQHandler,
+    DefaultIRQHandler,
+    DefaultIRQHandler
 };
 
-fn DefaultIRQHandler() void {
+fn DefaultIRQHandler() callconv(.c) void {
     while (true) {
         asm volatile ("wfi");
     }
 }
 
-export fn MachineSoftwareInterruptHandler() void {
+export fn MachineSoftwareInterruptHandler() callconv(.c) void {
 
 }
 
-export fn MachineTimerInterruptHandler() void {
+//export fn MachineTimerInterruptHandler() callconv(.c) void {
+//
+//}
 
-}
-
-export fn MachineExternalInterruptHandler() void {
+export fn MachineExternalInterruptHandler() callconv(.c) void {
     var value: u32 = undefined;
 
     // read meinext
@@ -139,4 +157,30 @@ export fn MachineExternalInterruptHandler() void {
             : [value] "=r" (value),
         );
     }
+}
+
+pub fn set_irq_handler(num: IrqNum, handler: IRQHandler) void {
+    irq_handlers[@intFromEnum(num)] = handler;
+}
+
+pub inline fn interrupt_enable(mie: MieRegister) void {
+    asm volatile ("csrs mie, %[val]"
+        :
+        : [val] "r" (@as(u32, @bitCast(mie)))
+    );
+}
+
+pub inline fn interrupt_disable(mie: MieRegister) void {
+    asm volatile ("csrc mie, %[val]"
+        :
+        : [val] "r" (@as(u32, @bitCast(mie)))
+    );
+}
+
+pub inline fn global_interrupt_enable() void {
+    asm volatile ("csrrsi zero, mstatus, 8");
+}
+
+pub inline fn global_interrupt_disable() void {
+    asm volatile ("csrrci zero, mstatus, 8");
 }

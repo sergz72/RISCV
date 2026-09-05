@@ -208,6 +208,22 @@ pub const Sio = extern struct {
             self.gpio_out_clr.high = mask;
         }
     }
+
+    pub fn get_mtime(self: *volatile Sio) u64 {
+        while (true) {
+            const high = self.mtimeh;
+            const low = self.mtime;
+            const high2 = self.mtimeh;
+            if (high == high2)
+                return @as(u64, low) | (@as(u64, high) << 32);
+        }
+    }
+
+    pub fn set_mtimecmp(self: *volatile Sio, value: u64) void {
+        self.mtimecmp = 0xFFFFFFFF;
+        self.mtimecmph = @intCast(value >> 32);
+        self.mtimecmp = @intCast(value & 0xFFFFFFFF);
+    }
 };
 
 /// Bitfields for the GPIO Status Register (GPIOx_STATUS)

@@ -7,16 +7,13 @@ pub fn build(b: *std.Build) void {
     features_add.addFeature(@intFromEnum(features.m));     // Multiply/Divide
     features_add.addFeature(@intFromEnum(features.a));     // Atomics
     features_add.addFeature(@intFromEnum(features.c));     // Compressed Instructions
-    features_add.addFeature(@intFromEnum(features.zicsr));
-    features_add.addFeature(@intFromEnum(features.zilsd));
     features_add.addFeature(@intFromEnum(features.zba));   // Address generation
     features_add.addFeature(@intFromEnum(features.zbb));   // Basic bit manipulation
-    features_add.addFeature(@intFromEnum(features.zbc));
     features_add.addFeature(@intFromEnum(features.zbs));   // Single-bit manipulation
     features_add.addFeature(@intFromEnum(features.zbkb));
-    features_add.addFeature(@intFromEnum(features.zbkx));
     features_add.addFeature(@intFromEnum(features.zcb));
-    features_add.addFeature(@intFromEnum(features.zclsd));
+    features_add.addFeature(@intFromEnum(features.zcmp));
+    features_add.addFeature(@intFromEnum(features.zicsr));
     features_add.addFeature(@intFromEnum(features.relax));
 
     var features_sub = std.Target.Cpu.Feature.Set.empty;
@@ -94,6 +91,7 @@ pub fn build(b: *std.Build) void {
     exe.link_gc_sections = true;
     exe.link_function_sections = true;
     exe.link_data_sections = true;
+    exe.lto = .full;                     // Whole-program optimization & inlining
 
     // exe.root_module.addCSourceFile(.{
     //     .file = b.path("lib/image_definition_block.c"),
