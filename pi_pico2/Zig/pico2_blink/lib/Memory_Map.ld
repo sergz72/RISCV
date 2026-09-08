@@ -22,6 +22,7 @@ SECTIONS
   .rodata : ALIGN(4)
   {
     *(.rodata)
+    *(.rodata*)
   } > FLASH
 
   .data :  ALIGN(4)
@@ -30,7 +31,11 @@ SECTIONS
     PROVIDE( __global_pointer$ = . + 0x100);
     *(.data)
     *(.data*)
+    . = ALIGN(4);
+    PROVIDE(_data_end = .);
   } > RAM  AT>FLASH
+
+  _data_load_ptr = LOADADDR(.data);
 
   .bss : ALIGN(4)
   {

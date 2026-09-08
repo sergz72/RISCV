@@ -55,22 +55,23 @@ _reset_handler:
     csrw mtvec, t0
 
     // copy data segment to RAM
-    la t0, _data_start
-    la t1, _bss_start
-    bgeu t0, t1, copy_end
+    la t0, _data_load_ptr
+    la t1, _data_start
+    la t3, _data_end
+    bgeu t1, t3, copy_end
 copy_loop:
     lw   t2, (t0)
     sw   t2, (t1)
     addi t0, t0, 4
     addi t1, t1, 4
-    bltu t0, t1, copy_loop
+    bltu t1, t3, copy_loop
 copy_end:
     // clear bss
     la   t0, _bss_start
     la   t1, _bss_end
     bgeu t0, t1, zero_end
 bss_fill_loop:
-    sw   x0, (t0)
+    sw   zero, (t0)
     addi t0, t0, 4
     bltu t0, t1, bss_fill_loop
 
@@ -95,7 +96,7 @@ cpu1_reset_handler:
     addi t0, t0, 1
     csrw mtvec, t0
 
-    la   sp, __CORE0_STACK_TOP
+    la   sp, __CORE1_STACK_TOP
     la   gp, __global_pointer$
     csrw mscratch, zero
     j  main_cpu1

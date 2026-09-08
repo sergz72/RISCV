@@ -1,3 +1,5 @@
+const cpu = @import("cpu");
+
 const SIO_BASE: u32         = 0xd0000000;
 const IO_BANK0_BASE: u32    = 0x40028000;
 const PADS_BANK0_BASE: u32  = 0x40038000;
@@ -38,6 +40,14 @@ pub const MTimeCtrl = packed struct(u32) {
     _reserved: u28 = 0
 };
 
+pub const SioFifoSt = packed struct(u32) {
+    vld: bool = false,
+    rdy: bool = false,
+    wof: bool = false,
+    roe: bool = false,
+    _reserved: u28 = 0
+};
+
 pub const Sio = extern struct {
     // 0x000
     cpuid: u32,
@@ -66,7 +76,7 @@ pub const Sio = extern struct {
     gpio_oe_xor: SioMask,
 
     // 0x050
-    fifo_st: u32,
+    fifo_st: SioFifoSt,
     // 0x054
     fifo_wr: u32,
     // 0x058
@@ -223,6 +233,50 @@ pub const Sio = extern struct {
         self.mtimecmp = 0xFFFFFFFF;
         self.mtimecmph = @intCast(value >> 32);
         self.mtimecmp = @intCast(value & 0xFFFFFFFF);
+    }
+
+    noinline fn check_fifo_st_lvd(self: *volatile Sio) bool {
+        return self.fifo_st.vld;
+    }
+
+    pub inline fn fifo_drain(self: *volatile Sio) void {
+        while (self.check_fifo_st_lvd()) {
+            _ = self.fifo_rd;
+        }
+    }
+
+    noinline fn check_fifo_st_rdy(self: *volatile Sio) bool {
+        return self.fifo_st.rdy;
+    }
+
+    pub inline fn fifo_push_blocking(self: *volatile Sio, v: u32) void {
+        while (!self.check_fifo_st_rdy()) {
+            asm volatile ("nop");
+        }
+        self.fifo_wr = v;
+        cpu.Cpu.sev();
+    }
+
+    pub inline fn fifo_pop_blocking(self: *volatile Sio) u32 {
+        while (!self.check_fifo_st_lvd()) {
+            cpu.Cpu.wfe();
+        }
+        return self.fifo_rd;
+    }
+
+    pub fn launch_core1(self: *volatile Sio, vector_table: u32, sp: u32, entry: u32) void {
+        const cmd_sequence = [_]u32{0, 0, 1, vector_table, sp, entry};
+        var seq: usize = 0;
+        while (seq < cmd_sequence.len) {
+            const cmd = cmd_sequence[seq];
+            if (cmd == 0) {
+                self.fifo_drain();
+                cpu.Cpu.sev();
+            }
+            self.fifo_push_blocking(cmd);
+            const response = self.fifo_pop_blocking();
+            seq = if (cmd == response) seq + 1 else 0;
+        }
     }
 };
 

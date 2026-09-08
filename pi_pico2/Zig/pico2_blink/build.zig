@@ -31,6 +31,18 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const cpu = b.addModule("cpu", .{
+        .root_source_file = b.path("lib/cpu.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const uart = b.addModule("uart", .{
+        .root_source_file = b.path("lib/uart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const io_registers = b.addModule("io_registers", .{
         .root_source_file = b.path("lib/io_registers.zig"),
         .target = target,
@@ -40,7 +52,10 @@ pub fn build(b: *std.Build) void {
     const sio = b.addModule("sio", .{
         .root_source_file = b.path("lib/sio.zig"),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu }
+        }
     });
 
     const ticks = b.addModule("ticks", .{
@@ -84,6 +99,7 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "ticks", .module = ticks },
                 .{ .name = "interrupts", .module = interrupts },
                 .{ .name = "resets", .module = resets },
+                .{ .name = "uart", .module = uart },
             },
         }),
     });
