@@ -43,7 +43,7 @@ fn delay(n: u32) void {
     systick_interrupt = false;
     systick.cntr = 0;
     systick.cmpr = n;
-    systick.ctlr = SystickCtlr{.ste = true, .stclk_hclk = true};
+    systick.ctlr = SystickCtlr{.ste = true, .stie = true, .stclk_hclk = true};
     while (!systick_interrupt) {
         asm volatile ("wfi");
     }
