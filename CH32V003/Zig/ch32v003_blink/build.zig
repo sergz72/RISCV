@@ -52,12 +52,19 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const pfic = b.addModule("pfic", .{
+        .root_source_file = b.path("lib/pfic.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const system_timer = b.addModule("system_timer", .{
         .root_source_file = b.path("lib/system_timer.zig"),
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "cpu", .module = cpu }
+            .{ .name = "cpu", .module = cpu },
+            .{ .name = "pfic", .module = pfic }
         },
     });
 

@@ -1,4 +1,5 @@
 const cpu = @import("cpu");
+const pfic = @import("pfic");
 
 const SYSTICK_BASE: usize = 0xE000F000;
 
@@ -15,14 +16,9 @@ const SystickCtlr = packed struct(u32) {
     swie: bool = false
 };
 
-const SystickSr = packed struct(u32) {
-    cntif: bool = false,
-    reserved: u31 = 0
-};
-
 const Systick = extern struct {
     ctlr: SystickCtlr,
-    sr: SystickSr,
+    sr: u32,
     cntr: u32,
     reserved: u32,
     cmpr: u32
@@ -33,16 +29,18 @@ const systick: *volatile Systick = @ptrFromInt(SYSTICK_BASE);
 pub fn delay_init() void {
     p_ms = cpu.cpu.current_frequency / 1000;
     p_us = p_ms / 1000;
+    pfic.pfic.interrupt_enable(pfic.Interrupt.SysTick);
 }
 
 export fn SysTick_Handler() callconv(.naked) void {
     systick_interrupt = true;
+    systick.sr = 0;
     asm volatile("mret");
 }
 
 fn delay(n: u32) void {
-    systick_interrupt = false;
     systick.ctlr = SystickCtlr{};
+    systick_interrupt = false;
     systick.cntr = 0;
     systick.cmpr = n;
     systick.ctlr = SystickCtlr{.ste = true, .stclk_hclk = true};

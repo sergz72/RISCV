@@ -2,7 +2,7 @@ const rcc = @import("rcc");
 const gpio = @import("gpio");
 const system_timer = @import("system_timer");
 
-const LED_PIN: u32 = 5;
+const LED_PIN: u32 = 6;
 const LED_PIN_MASK: u32 = 1 << LED_PIN;
 
 export fn main() callconv(.c) noreturn {
