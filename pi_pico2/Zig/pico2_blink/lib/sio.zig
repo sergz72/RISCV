@@ -235,6 +235,7 @@ pub const Sio = extern struct {
         self.mtimecmp = @intCast(value & 0xFFFFFFFF);
     }
 
+    //todo: fix
     noinline fn check_fifo_st_lvd(self: *volatile Sio) bool {
         return self.fifo_st.vld;
     }
@@ -245,6 +246,7 @@ pub const Sio = extern struct {
         }
     }
 
+    //todo: fix
     noinline fn check_fifo_st_rdy(self: *volatile Sio) bool {
         return self.fifo_st.rdy;
     }

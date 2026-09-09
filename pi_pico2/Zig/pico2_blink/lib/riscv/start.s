@@ -5,7 +5,7 @@
 .section .image_start_block, "a"
 .align 3
 
-// Mandatory RP2350 RISC-V Boot Block Header
+// Mandatory RP2350 Boot Block Header
 embedded_block:
 .word PICOBIN_BLOCK_MARKER_START
 

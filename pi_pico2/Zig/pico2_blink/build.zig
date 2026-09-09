@@ -1,55 +1,27 @@
 const std = @import("std");
 
-pub fn build(b: *std.Build) void {
-    var features_add = std.Target.Cpu.Feature.Set.empty;
-    const features = std.Target.riscv.Feature;
+fn get_module_name(allocator: std.mem.Allocator, target_name: []const u8, module_name: []const u8) ![]u8 {
+    return try std.fmt.allocPrint(allocator, "{s}_{s}", .{target_name, module_name});
+}
 
-    features_add.addFeature(@intFromEnum(features.m));     // Multiply/Divide
-    features_add.addFeature(@intFromEnum(features.a));     // Atomics
-    features_add.addFeature(@intFromEnum(features.c));     // Compressed Instructions
-    features_add.addFeature(@intFromEnum(features.zba));   // Address generation
-    features_add.addFeature(@intFromEnum(features.zbb));   // Basic bit manipulation
-    features_add.addFeature(@intFromEnum(features.zbs));   // Single-bit manipulation
-    features_add.addFeature(@intFromEnum(features.zbkb));
-    features_add.addFeature(@intFromEnum(features.zcb));
-    features_add.addFeature(@intFromEnum(features.zcmp));
-    features_add.addFeature(@intFromEnum(features.zicsr));
-    features_add.addFeature(@intFromEnum(features.relax));
-
-    var features_sub = std.Target.Cpu.Feature.Set.empty;
-    features_sub.addFeature(@intFromEnum(features.f));
-    features_sub.addFeature(@intFromEnum(features.d));
-    features_sub.addFeature(@intFromEnum(features.zcf));
-
-    const target = b.resolveTargetQuery(.{
-        .cpu_arch = .riscv32,
-        .os_tag = .freestanding,
-        .abi = .ilp32,
-        .cpu_features_add = features_add,
-        .cpu_features_sub = features_sub
-    });
-
-    const optimize = b.standardOptimizeOption(.{});
-
-    const cpu = b.addModule("cpu", .{
-        .root_source_file = b.path("lib/cpu.zig"),
+fn build_target(b: *std.Build, target_name: []const u8, target: std.Build.ResolvedTarget,
+                        optimize: std.builtin.OptimizeMode) !void {
+    const interrupts = b.addModule(try get_module_name(b.allocator, target_name, "interrupts"), .{
+        .root_source_file = b.path(try std.fmt.allocPrint(b.allocator, "lib/{s}/interrupts.zig", .{target_name})),
         .target = target,
         .optimize = optimize
     });
 
-    const uart = b.addModule("uart", .{
-        .root_source_file = b.path("lib/uart.zig"),
+    const cpu = b.addModule(try get_module_name(b.allocator, target_name, "cpu"), .{
+        .root_source_file = b.path(try std.fmt.allocPrint(b.allocator, "lib/{s}/cpu.zig", .{target_name})),
         .target = target,
-        .optimize = optimize
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "interrupts", .module = interrupts }
+        }
     });
 
-    const io_registers = b.addModule("io_registers", .{
-        .root_source_file = b.path("lib/io_registers.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const sio = b.addModule("sio", .{
+    const sio = b.addModule(try get_module_name(b.allocator, target_name, "sio"), .{
         .root_source_file = b.path("lib/sio.zig"),
         .target = target,
         .optimize = optimize,
@@ -58,19 +30,41 @@ pub fn build(b: *std.Build) void {
         }
     });
 
-    const ticks = b.addModule("ticks", .{
+    const system_timer = b.addModule(try get_module_name(b.allocator, target_name, "system_timer"), .{
+        .root_source_file = b.path(try std.fmt.allocPrint(b.allocator, "lib/{s}/system_timer.zig", .{target_name})),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "cpu", .module = cpu },
+        .{ .name = "sio", .module = sio }
+        }
+    });
+
+    const xosc = b.addModule(try get_module_name(b.allocator, target_name, "xosc"), .{
+        .root_source_file = b.path("lib/xosc.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const uart = b.addModule(try get_module_name(b.allocator, target_name, "uart"), .{
+        .root_source_file = b.path("lib/uart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const io_registers = b.addModule(try get_module_name(b.allocator, target_name, "io_registers"), .{
+        .root_source_file = b.path("lib/io_registers.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
+    const ticks = b.addModule(try get_module_name(b.allocator, target_name, "ticks"), .{
         .root_source_file = b.path("lib/ticks.zig"),
         .target = target,
         .optimize = optimize
     });
 
-    const interrupts = b.addModule("interrupts", .{
-        .root_source_file = b.path("lib/interrupts.zig"),
-        .target = target,
-        .optimize = optimize
-    });
-
-    const resets = b.addModule("resets", .{
+    const resets = b.addModule(try get_module_name(b.allocator, target_name, "resets"), .{
         .root_source_file = b.path("lib/resets.zig"),
         .target = target,
         .optimize = optimize,
@@ -79,17 +73,8 @@ pub fn build(b: *std.Build) void {
         }
     });
 
-    // const rp2350 = b.addTranslateC(.{
-    //    .root_source_file = b.path("lib/RP2350.h"),
-    //    .target = target,
-    //    .optimize = optimize,
-    //    .link_libc = false
-    // });
-
-    // rp2350.defineCMacro("CORE_FAMILY_RISC_V", null);
-
-    const exe = b.addExecutable(.{
-        .name = "pico2_blink.elf",
+    const riscv_exe = b.addExecutable(.{
+        .name = try std.fmt.allocPrint(b.allocator, "pico2_blink_{s}.elf", .{target_name}),
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -100,48 +85,71 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "interrupts", .module = interrupts },
                 .{ .name = "resets", .module = resets },
                 .{ .name = "uart", .module = uart },
+                .{ .name = "xosc", .module = xosc },
+                .{ .name = "cpu", .module = cpu },
+                .{ .name = "system_timer", .module = system_timer },
             },
         }),
     });
 
-    exe.link_gc_sections = true;
-    exe.link_function_sections = true;
-    exe.link_data_sections = true;
-    exe.lto = .full;                     // Whole-program optimization & inlining
+    riscv_exe.link_gc_sections = true;
+    riscv_exe.link_function_sections = true;
+    riscv_exe.link_data_sections = true;
+    riscv_exe.lto = .full;                     // Whole-program optimization & inlining
 
-    // exe.root_module.addCSourceFile(.{
-    //     .file = b.path("lib/image_definition_block.c"),
-    //     // Pass any required compiler flags, or empty slice if none
-    //     .flags = &.{ "-Wall", "-std=c23" },
-    // });
+    riscv_exe.root_module.addAssemblyFile(b.path(try std.fmt.allocPrint(b.allocator, "lib/{s}/start.s", .{target_name})));
+    riscv_exe.root_module.addAssemblyFile(b.path(try std.fmt.allocPrint(b.allocator, "lib/{s}/interrupts.s", .{target_name})));
 
-    // exe.root_module.addCSourceFile(.{
-    //     .file = b.path("lib/Startup/Core/RISC-V/image_definition_block.c"),
-    //     // Pass any required compiler flags, or empty slice if none
-    //     .flags = &.{ "-Wall", "-std=c23" },
-    // });
+    riscv_exe.setLinkerScript(b.path("lib/Memory_Map.ld"));
 
-    // exe.root_module.addCSourceFile(.{
-    //     .file = b.path("lib/Startup/Startup.c"),
-    //     // Pass any required compiler flags, or empty slice if none
-    //     .flags = &.{ "-Wall", "-std=c23" },
-    // });
+    riscv_exe.entry = .{ .symbol_name = "_entry_point" };
 
-    exe.root_module.addAssemblyFile(b.path("lib/start.s"));
-    exe.root_module.addAssemblyFile(b.path("lib/interrupts.s"));
+    b.installArtifact(riscv_exe);
 
-    exe.setLinkerScript(b.path("lib/Memory_Map.ld"));
+    const riscv_size_report = b.addSystemCommand(&.{ "llvm-size-22" });
+    riscv_size_report.addArtifactArg(riscv_exe);
 
-    // Prevent Zig from filling in standard OS/libc entry points
-    //exe.linker_allow_shlib_undefined = true;
+    b.getInstallStep().dependOn(&riscv_size_report.step);
+}
 
-    exe.entry = .{ .symbol_name = "_entry_point" };
+pub fn build(b: *std.Build) !void {
+    var riscv_features_add = std.Target.Cpu.Feature.Set.empty;
+    const riscv_features = std.Target.riscv.Feature;
 
-    b.installArtifact(exe);
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.m));     // Multiply/Divide
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.a));     // Atomics
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.c));     // Compressed Instructions
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zba));   // Address generation
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zbb));   // Basic bit manipulation
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zbs));   // Single-bit manipulation
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zbkb));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zcb));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zcmp));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.zicsr));
+    riscv_features_add.addFeature(@intFromEnum(riscv_features.relax));
 
-    const size_report = b.addSystemCommand(&.{ "llvm-size-22" });
-    size_report.addArtifactArg(exe);
+    var riscv_features_sub = std.Target.Cpu.Feature.Set.empty;
+    riscv_features_sub.addFeature(@intFromEnum(riscv_features.f));
+    riscv_features_sub.addFeature(@intFromEnum(riscv_features.d));
+    riscv_features_sub.addFeature(@intFromEnum(riscv_features.zcf));
 
-    // 3. Make the main install step depend on your size report
-    b.getInstallStep().dependOn(&size_report.step);
+    const riscv_target = b.resolveTargetQuery(.{
+        .cpu_arch = .riscv32,
+        .os_tag = .freestanding,
+        .abi = .ilp32,
+        .cpu_features_add = riscv_features_add,
+        .cpu_features_sub = riscv_features_sub
+    });
+
+    const arm_target = b.resolveTargetQuery(.{
+        .cpu_arch = .thumb,
+        .os_tag = .freestanding,
+        .abi = .eabi,
+        .cpu_model = .{ .explicit = &std.Target.arm.cpu.cortex_m33 }
+    });
+
+    const optimize = b.standardOptimizeOption(.{});
+
+    try build_target(b, "riscv", riscv_target, optimize);
+    try build_target(b, "arm", arm_target, optimize);
 }
