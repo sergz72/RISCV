@@ -76,6 +76,12 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
+    const usart = b.addModule("usart", .{
+        .root_source_file = b.path("../lib/usart.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const riscv_exe = b.addExecutable(.{
         .name = "ch32v305_blink.elf",
         .root_module = b.createModule(.{
@@ -87,6 +93,9 @@ pub fn build(b: *std.Build) !void {
                 .{ .name = "gpio", .module = gpio },
                 .{ .name = "afio", .module = afio },
                 .{ .name = "system_timer", .module = system_timer },
+                .{ .name = "usart", .module = usart },
+                .{ .name = "cpu", .module = cpu },
+                .{ .name = "pfic", .module = pfic }
             },
         }),
     });
