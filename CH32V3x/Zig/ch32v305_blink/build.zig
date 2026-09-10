@@ -54,6 +54,12 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize
     });
 
+    const afio = b.addModule("afio", .{
+        .root_source_file = b.path("../lib/afio.zig"),
+        .target = target,
+        .optimize = optimize
+    });
+
     const pfic = b.addModule("pfic", .{
         .root_source_file = b.path("../lib/pfic.zig"),
         .target = target,
@@ -79,6 +85,7 @@ pub fn build(b: *std.Build) !void {
             .imports = &.{
                 .{ .name = "rcc", .module = rcc },
                 .{ .name = "gpio", .module = gpio },
+                .{ .name = "afio", .module = afio },
                 .{ .name = "system_timer", .module = system_timer },
             },
         }),
