@@ -18,29 +18,37 @@ pub const GpioCnfAlternatePushPull: u32 = 8;
 pub const GpioCnfAlternateOpenDrain: u32 = 12;
 
 pub const Gpio = extern struct {
-    cfglr: u32,
-    reserved: u32,
+    cfgr: [2]u32,
     indr: u32,
     outdr: u32,
     bshr: u32,
     bcr: u32,
     lckr: u32,
 
-    pub fn Init(self: *volatile Gpio, pins: u32, mode_and_speed: u32) void {
+    fn init(self: *volatile Gpio, pins: u32, mode_and_speed: u32, index: usize) void {
+        if (pins == 0)
+            return;
         var pin_mask = pins;
-        var cfglr_mask: u32 = 0x0F;
-        var cfglr = self.cfglr;
+        var cfgr_mask: u32 = 0x0F;
+        var cfgr = self.cfgr[index];
         var shift: u5 = 0;
         while (pin_mask != 0) {
             if (pin_mask & 1 != 0) {
-                cfglr &= ~cfglr_mask;
-                cfglr |= mode_and_speed << shift;
+                cfgr &= ~cfgr_mask;
+                cfgr |= mode_and_speed << shift;
             }
             pin_mask >>= 1;
-            cfglr_mask <<= 4;
+            if (pin_mask == 0)
+                break;
+            cfgr_mask <<= 4;
             shift += 4;
         }
-        self.cfglr = cfglr;
+        self.cfgr[index] = cfgr;
+    }
+
+    pub fn Init(self: *volatile Gpio, pins: u32, mode_and_speed: u32) void {
+        self.init(pins & 0xFF, mode_and_speed, 0);
+        self.init(pins >> 8, mode_and_speed, 1);
     }
 };
 
