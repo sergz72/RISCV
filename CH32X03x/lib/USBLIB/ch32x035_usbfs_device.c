@@ -183,7 +183,7 @@ void USBFS_Device_Init( FunctionalState sta , PWR_VDD VDD_Voltage)
  *
  * @return  none
  */
-uint8_t USBFS_Endp_DataUp(uint8_t endp, uint8_t *pbuf, uint16_t len, uint8_t mod)
+uint8_t USBFS_Endp_DataUp(const uint8_t endp, uint8_t *pbuf, uint16_t len, uint8_t mod)
 {
     uint8_t endp_mode;
     uint8_t buf_load_offset;

@@ -32,9 +32,13 @@ file(GLOB SOURCES
         "../lib/USBLIB/ch32x035_usbfs_device.c"
         "../lib/USBLIB/usb_desc.c"
         "../lib/USBLIB/usb_cdc.c"
+        "../../../common_lib/shell2/shell.c"
+        "../../../common_lib/getstring.c"
+        "../../../common_lib/fixed_queue.c"
+        "../../../common_lib/common_printf.c"
 )
 
-include_directories(src ../lib ../lib/inc ../lib/USBLIB)
+include_directories(src ../lib ../lib/inc ../lib/USBLIB ../../../common_lib/shell2 ../../../common_lib)
 
 set_source_files_properties("../lib/USBLIB/ch32x035_usbfs_device.c" PROPERTIES COMPILE_FLAGS "-O3")
 set_source_files_properties("../lib/USBLIB/usb_cdc.c" PROPERTIES COMPILE_FLAGS "-O3")
@@ -43,12 +47,3 @@ add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 
 set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
-
-set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
-set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
-
-add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${HEX_FILE}
-        COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
-        COMMENT "Building ${HEX_FILE}
-Building ${BIN_FILE}")

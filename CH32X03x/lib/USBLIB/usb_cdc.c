@@ -12,7 +12,6 @@ void CDC_Init(void)
 
 void CDC_Rx(unsigned int size)
 {
-  //todo
   unsigned char *endp = cdc_rx_buffer_write_p + size;
   unsigned int l = endp - cdc_rx_buffer > CDC_RX_BUF_LEN ? &cdc_rx_buffer[CDC_RX_BUF_LEN] - cdc_rx_buffer_write_p : size;
   unsigned char *p = CDC_Rx_Buf;
@@ -47,7 +46,7 @@ unsigned int CDC_Receive(unsigned char *buffer, unsigned int buffer_size)
   return l;
 }
 
-void CDC_Transmit(unsigned char *buffer, unsigned int length)
+void CDC_Transmit(const unsigned char *buffer, unsigned int length)
 {
   while (length)
   {

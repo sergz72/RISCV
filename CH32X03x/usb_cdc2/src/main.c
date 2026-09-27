@@ -1,8 +1,9 @@
 #include "board.h"
-#include "delay.h"
 #include "ch32x035_usbfs_device.h"
 #include <ch32x035_pwr.h>
 #include <usb_cdc.h>
+#include <shell.h>
+#include <getstring.h>
 
 static int led_state;
 
@@ -16,6 +17,25 @@ static void led_toggle(void)
 }
 
 static unsigned char cdc_rx_buffer[CDC_RX_BUF_LEN];
+static char puts_buffer[PRINTF_BUFFER_LENGTH*2];
+
+void puts_(const char *s)
+{
+  int l = 0;
+  char *p = puts_buffer;
+  while (*s)
+  {
+    char c = *s++;
+    if (c == '\n')
+    {
+      *p++ = '\r';
+      l++;
+    }
+    *p++ = c;
+    l++;
+  }
+  CDC_Transmit((const unsigned char*)puts_buffer, l);
+}
 
 int main(void)
 {
@@ -24,6 +44,10 @@ int main(void)
   SysInit();
 
   led_state = 0;
+
+  shell_init(common_printf);
+
+  getstring_init(command_line, COMMAND_LINE_LENGTH, getch_, puts_);
 
   USBFS_RCC_Init( );
   USBFS_Device_Init( ENABLE , PWR_VDD_SupplyVoltage());
@@ -44,8 +68,10 @@ int main(void)
       else
         counter++;
       unsigned int length = CDC_Receive(cdc_rx_buffer, sizeof(cdc_rx_buffer));
-      if (length)
-        CDC_Transmit(cdc_rx_buffer, length);
+      const unsigned char *p = cdc_rx_buffer;
+      while (length--)
+        shell_process_char(*p++);
+      shell_handler();
     }
   }
 }
