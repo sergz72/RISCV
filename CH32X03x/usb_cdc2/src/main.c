@@ -32,9 +32,10 @@ int main(void)
 
   while (1)
   {
-    __WFI();
+    asm __volatile__("wfi");
     if (timer_interrupt)
     {
+      timer_interrupt = 0;
       if (counter == 99)
       {
         counter = 0;
@@ -45,8 +46,6 @@ int main(void)
       unsigned int length = CDC_Receive(cdc_rx_buffer, sizeof(cdc_rx_buffer));
       if (length)
         CDC_Transmit(cdc_rx_buffer, length);
-
-      timer_interrupt = 0;
     }
   }
 }

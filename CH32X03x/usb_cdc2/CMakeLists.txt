@@ -9,11 +9,7 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 SET(LINKER_SCRIPT ../../Link.ld)
 
-if (MOUNRIVER)
-    SET(COMMON_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
-else()
-    SET(COMMON_FLAGS " -march=rv32imac_zicsr -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
-endif()
+SET(COMMON_FLAGS " -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -specs=nosys.specs -specs=nano.specs -nostartfiles")
 
 SET(CMAKE_C_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
 SET(CMAKE_ASM_FLAGS_INIT "${COMMON_FLAGS} -std=gnu99")
@@ -39,6 +35,9 @@ file(GLOB SOURCES
 )
 
 include_directories(src ../lib ../lib/inc ../lib/USBLIB)
+
+set_source_files_properties("../lib/USBLIB/ch32x035_usbfs_device.c" PROPERTIES COMPILE_FLAGS "-O3")
+set_source_files_properties("../lib/USBLIB/usb_cdc.c" PROPERTIES COMPILE_FLAGS "-O3")
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 

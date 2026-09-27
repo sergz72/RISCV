@@ -11,7 +11,6 @@
 *******************************************************************************/
 #include "ch32x035_pwr.h"
 #include "ch32x035_rcc.h"
-#include "delay.h"
 
 /* PWR registers bit mask */
 /* CTLR register bit mask */

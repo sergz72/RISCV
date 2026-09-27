@@ -52,7 +52,6 @@ volatile uint8_t  USBFS_DevEnumStatus;
 /* Endpoint Buffer */
 __attribute__ ((aligned(4))) uint8_t USBFS_EP0_4Buf[ DEF_USBD_UEP0_SIZE ];
 __attribute__ ((aligned(4))) uint8_t USBFS_EP1_Buf[ DEF_USBD_ENDP1_SIZE ];
-__attribute__ ((aligned(4))) uint8_t USBFS_EP2_Buf[ DEF_USBD_ENDP2_SIZE ];
 __attribute__ ((aligned(4))) uint8_t USBFS_EP3_Buf[ DEF_USBD_ENDP3_SIZE ];
 
 __attribute__ ((aligned(4))) uint8_t  CDC_Rx_Buf[DEF_USBD_ENDP2_SIZE];
@@ -64,11 +63,7 @@ volatile int CDC_Tx_InProgress;
 
 /******************************************************************************/
 /* Interrupt Service Routine Declaration*/
-#if __GNUC__ > 13
-void __attribute__((naked)) USBFS_IRQHandler(void);
-#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) USBFS_IRQHandler(void);
-#endif
 
 
 /*********************************************************************
@@ -99,8 +94,8 @@ void USBFS_Device_Endp_Init( void )
 
     USBFSD->UEP0_DMA = (uint32_t)USBFS_EP0_4Buf;
     USBFSD->UEP1_DMA = (uint32_t)USBFS_EP1_Buf;
-    USBFSD->UEP2_DMA = (uint32_t)(uint8_t *)&CDC_Rx_Buf[ 0 ];
-    USBFSD->UEP3_DMA = (uint32_t)(uint8_t *)&USBFS_EP3_Buf[ 0 ];
+    USBFSD->UEP2_DMA = (uint32_t)&CDC_Rx_Buf[ 0 ];
+    USBFSD->UEP3_DMA = (uint32_t)&USBFS_EP3_Buf[ 0 ];
 
     USBFSD->UEP0_CTRL_H = USBFS_UEP_R_RES_ACK | USBFS_UEP_T_RES_NAK;
     USBFSD->UEP2_CTRL_H = USBFS_UEP_R_RES_ACK;
@@ -884,8 +879,4 @@ void USBFS_IRQHandler( void )
         /* other interrupts */
         USBFSD->INT_FG = intflag;
     }
-
-#if __GNUC__ > 13
-    asm volatile ("mret");
-#endif
 }

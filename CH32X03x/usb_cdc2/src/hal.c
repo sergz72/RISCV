@@ -4,17 +4,10 @@
 
 volatile unsigned int timer_interrupt;
 
-#if __GNUC__ > 13
-void __attribute__((naked)) TIM2_UP_IRQHandler(void)
-#else
 void __attribute__((interrupt("WCH-Interrupt-fast"))) TIM2_UP_IRQHandler(void)
-#endif
 {
   timer_interrupt = 1;
   TIM2->INTFR = 0;
-#if __GNUC__ > 13
-  asm volatile ("mret");
-#endif
 }
 
 static void GPIOInit(void)
@@ -43,8 +36,10 @@ static void TIM2Init(void)
   TIM_TimeBaseInitStructure.TIM_Prescaler = SystemCoreClock/1000000-1;
   TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
   TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;
   TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
 
+  TIM_ARRPreloadConfig(TIM2, ENABLE);
   TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 
   NVIC_InitStructure.NVIC_IRQChannel = TIM2_UP_IRQn;

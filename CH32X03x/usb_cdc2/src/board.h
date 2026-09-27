@@ -7,11 +7,11 @@
 
 #include <ch32x035.h>
 
-//PB12
-#define LED_PIN GPIO_Pin_12
-#define LED_PORT GPIOB
-#define LED_ON GPIOB->BCR = LED_PIN
-#define LED_OFF GPIOB->BSHR = LED_PIN
+//PA4
+#define LED_PIN GPIO_Pin_4
+#define LED_PORT GPIOA
+#define LED_ON GPIOA->BCR = LED_PIN
+#define LED_OFF GPIOA->BSHR = LED_PIN
 
 #define CDC_RX_BUF_LEN 1024
 

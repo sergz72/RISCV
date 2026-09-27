@@ -5,6 +5,7 @@
 #include "ch32x035_rcc.h"
 #include "ch32x035_misc.h"
 #include "ch32x035_pwr.h"
+#include <delay.h>
 
 #endif
 

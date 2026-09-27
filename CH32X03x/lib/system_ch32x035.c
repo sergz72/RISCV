@@ -24,15 +24,16 @@
 
 /* Clock Definitions */
 #ifdef SYSCLK_FREQ_8MHz_HSI
-unsigned int SystemCoreClock         = SYSCLK_FREQ_8MHz_HSI;              /* System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = SYSCLK_FREQ_8MHz_HSI;              /* System Clock Frequency (Core Clock) */
 #elif defined SYSCLK_FREQ_12MHz_HSI
-unsigned int SystemCoreClock         = SYSCLK_FREQ_12MHz_HSI;        /* System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = SYSCLK_FREQ_12MHz_HSI;        /* System Clock Frequency (Core Clock) */
 #elif defined SYSCLK_FREQ_16MHz_HSI
-unsigned int SystemCoreClock         = SYSCLK_FREQ_16MHz_HSI;        /* System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = SYSCLK_FREQ_16MHz_HSI;        /* System Clock Frequency (Core Clock) */
 #elif defined SYSCLK_FREQ_24MHz_HSI
-unsigned int SystemCoreClock         = SYSCLK_FREQ_24MHz_HSI;        /* System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = SYSCLK_FREQ_24MHz_HSI;        /* System Clock Frequency (Core Clock) */
 #else
-unsigned int SystemCoreClock         = HSI_VALUE;                    /* System Clock Frequency (Core Clock) */
+uint32_t SystemCoreClock         = HSI_VALUE;                    /* System Clock Frequency (Core Clock) */
+
 #endif
 
 __I uint8_t AHBPrescTable[16] = {1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -51,6 +52,7 @@ static void SetSysClockTo16_HSI( void );
 static void SetSysClockTo24_HSI( void );
 #else
 static void SetSysClockTo48_HSI( void );
+
 #endif
 
 /*********************************************************************
@@ -102,7 +104,7 @@ void SystemCoreClockUpdate (void)
  */
 static void SetSysClock(void)
 {
-//    GPIO_IPD_Unused();
+    GPIO_IPD_Unused();
 
 #ifdef SYSCLK_FREQ_8MHz_HSI
     SetSysClockTo8_HSI();
@@ -114,6 +116,7 @@ static void SetSysClock(void)
     SetSysClockTo24_HSI();
 #else
     SetSysClockTo48_HSI();
+
 #endif
 }
 
@@ -235,3 +238,4 @@ static void SetSysClockTo48_HSI(void)
 }
 
 #endif
+
